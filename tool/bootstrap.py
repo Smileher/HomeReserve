@@ -13,7 +13,7 @@ manifest = ROOT / "android/app/src/main/AndroidManifest.xml"
 text = manifest.read_text(encoding="utf-8").replace('android:label="home_reserve"', 'android:label="家有余" android:allowBackup="false"')
 manifest.write_text(text, encoding="utf-8")
 gradle = ROOT / "android/app/build.gradle.kts"
-text = re.sub(r"minSdk = (?:flutter.minSdkVersion|\d+)", "minSdk = 31", gradle.read_text(encoding="utf-8"))
+text = re.sub(r"minSdk = (?:flutter.minSdkVersion|\d+)", "minSdk = 36", gradle.read_text(encoding="utf-8"))
 if 'create("release")' not in text:
     text = text.replace("    buildTypes {", '''    signingConfigs {
         create("release") {
@@ -40,10 +40,10 @@ for filename in ["DebugProfile.entitlements", "Release.entitlements"]:
         text = text.replace("</dict>", "<key>com.apple.security.files.user-selected.read-write</key><true/>\n</dict>")
     target.write_text(text, encoding="utf-8")
 project = ROOT / "macos/Runner.xcodeproj/project.pbxproj"
-project.write_text(re.sub(r"MACOSX_DEPLOYMENT_TARGET = [^;]+;", "MACOSX_DEPLOYMENT_TARGET = 13.0;", project.read_text(encoding="utf-8")), encoding="utf-8")
+project.write_text(re.sub(r"MACOSX_DEPLOYMENT_TARGET = [^;]+;", "MACOSX_DEPLOYMENT_TARGET = 26.0;", project.read_text(encoding="utf-8")), encoding="utf-8")
 podfile = ROOT / "macos/Podfile"
 if podfile.exists():
-    podfile.write_text(re.sub(r"platform :osx, '[^']+'", "platform :osx, '13.0'", podfile.read_text(encoding="utf-8")), encoding="utf-8")
+    podfile.write_text(re.sub(r"platform :osx, '[^']+'", "platform :osx, '26.0'", podfile.read_text(encoding="utf-8")), encoding="utf-8")
 
 # Use freely redistributable Noto; instantiate a static font for PDF compatibility.
 fonts = ROOT / "assets/fonts"

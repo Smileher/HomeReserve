@@ -63,9 +63,9 @@ jobs:
         include:
           - os: ubuntu-24.04
             platform: android
-          - os: windows-2025
+          - os: windows-2025-vs2026
             platform: windows
-          - os: macos-15
+          - os: macos-26
             platform: macos-arm64
     runs-on: ${{ matrix.os }}
     steps:
@@ -84,6 +84,10 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: flutter pub get --enforce-lockfile
+      - name: Android SDK 准备
+        if: matrix.platform == 'android'
+        shell: bash
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.2"'
       - name: Android 正式签名与构建
         if: matrix.platform == 'android'
         shell: bash
@@ -97,10 +101,10 @@ jobs:
           export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/homereserve.jks"
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
           chmod +x android/gradlew
-          flutter build apk --release
+          flutter build apk --release --target-platform android-arm64
           "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner" verify --verbose build/app/outputs/flutter-apk/app-release.apk
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk dist/HomeReserve-android.apk
+          cp build/app/outputs/flutter-apk/app-release.apk dist/HomeReserve-android-arm64.apk
       - name: Windows 构建
         if: matrix.platform == 'windows'
         shell: pwsh

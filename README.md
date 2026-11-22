@@ -15,9 +15,9 @@
 
 | 系统 | 文件与使用方式 |
 | --- | --- |
-| Android 12+ | 下载并安装 APK |
-| Windows 10/11 x64 | 完整解压 ZIP，运行 home_reserve.exe |
-| macOS 13+ Apple Silicon | 下载 DMG，拖入 Applications |
+| Android 16+ ARM64 | 下载并安装 HomeReserve-android-arm64.apk |
+| Windows 11 x64 | 完整解压 ZIP，运行 home_reserve.exe |
+| macOS 26+ Apple Silicon | 下载 DMG，拖入 Applications |
 
 Windows 首版无付费代码签名；macOS 使用本地签名、未做 Apple 公证，首次打开可能需要在系统中确认来源。
 
@@ -29,7 +29,7 @@ Windows 首版无付费代码签名；macOS 使用本地签名、未做 Apple �
 
 ## 开发
 
-Flutter 3.50.1 stable、Riverpod、Drift/SQLite。安装 Python 的 pillow、fonttools 后，运行 `python tool/bootstrap.py`、`flutter pub get`、`flutter analyze`、`flutter test`。
+Flutter 3.50.1 stable、Riverpod、Drift/SQLite。Android 编译 SDK 37.2、目标 API 37、最低 API 36，发布包仅包含 ARM64。Windows 使用 Visual Studio 2026，macOS 使用 macOS 26 构建环境。安装 Python 的 pillow、fonttools 后，运行 `python tool/bootstrap.py`、`flutter pub get`、`flutter analyze`、`flutter test`。
 
 GitHub Actions 构建三端，发布版本标签后生成安装包及 SHA-256 校验文件。Android 正式签名通过仓库 Secrets 配置，禁止提交密钥。
 
