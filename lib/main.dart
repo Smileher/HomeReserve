@@ -1232,7 +1232,7 @@ class _BookPageState extends ConsumerState<BookPage> {
             style: TextStyle(height: 1.8),
           ),
           const SizedBox(height: 14),
-          muted('版本 1.0.2 · 本地离线 · 人民币\n数据保存在本机，不会上传财务数据。请定期导出备份。'),
+          muted('版本 1.1.0 · 本地离线 · 人民币\n数据保存在本机，不会上传财务数据。请定期导出备份。'),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
