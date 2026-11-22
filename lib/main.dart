@@ -5,8 +5,6 @@ import 'dart:typed_data';
 import 'package:file_selector/file_selector.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter_localizations/flutter_localizations.dart'
-    show GlobalCupertinoLocalizations, GlobalWidgetsLocalizations;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
@@ -129,11 +127,7 @@ class HomeReserveApp extends ConsumerWidget {
           routerConfig: router,
           locale: const Locale('zh', 'CN'),
           supportedLocales: const [Locale('zh', 'CN')],
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-          ],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
           builder: (c, child) {
             if (store.error != null) {
               return Scaffold(

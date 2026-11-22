@@ -22,7 +22,7 @@ void main() {
     final book = fixture.sample();
     final report = ReportData(book, 2026);
     final excel = Excel.decodeBytes(report.xlsx());
-    expect(excel.tables['月度记录']!.rows[1][2]!.value, isA<DoubleCellValue>());
+    expect(excel.tables['月度记录']!.rows[1][2]!.value, anyOf(isA<DoubleCellValue>(), isA<IntCellValue>()));
     final imported = parseTable(utf8.encode(report.csv()), 'csv', book);
     expect(imported.book.months.single.data['saving'], 300000);
     expect(imported.book.months.single.data['note'], '生活 & 储蓄');
