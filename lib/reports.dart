@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:archive/archive.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+
 import 'domain.dart';
 import 'transfer.dart';
 
@@ -46,13 +48,14 @@ class ReportData {
 
   String get generated =>
       '生成时间：${DateTime.now().toLocal().toString().split('.').first} · 人民币';
-  String csv() => '\uFEFF${rows.map((row) => row.asMap().entries.map((cell) {
-    final value = cell.value;
-    final numeric = (cell.key == 2 || cell.key == 3) && RegExp(r'^-?\d+(\.\d{1,2})?$').hasMatch(value);
-    // User text must not become a formula; signed numeric money remains numeric.
-    final safe = !numeric && RegExp(r'^[\s]*[=+@-]|^[\t\r]').hasMatch(value) ? "'$value" : value;
-    return '"${safe.replaceAll('"', '""')}"';
-  }).join(',')).join('\r\n')}';
+  String csv() =>
+      '\uFEFF${rows.map((row) => row.asMap().entries.map((cell) {
+        final value = cell.value;
+        final numeric = (cell.key == 2 || cell.key == 3) && RegExp(r'^-?\d+(\.\d{1,2})?$').hasMatch(value);
+        // User text must not become a formula; signed numeric money remains numeric.
+        final safe = !numeric && RegExp(r'^[\s]*[=+@-]|^[\t\r]').hasMatch(value) ? "'$value" : value;
+        return '"${safe.replaceAll('"', '""')}"';
+      }).join(',')).join('\r\n')}';
   Uint8List xlsx() {
     final excel = Excel.createExcel();
     final sheet = excel['月度记录'];
@@ -133,10 +136,8 @@ class ReportData {
     final document =
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${para('家有余 · $year 年家庭报告', title: true)}${para(generated)}${para('收入 ${money(income)}    净存入 ${money(saving)}')}${para(completeness)}$table${para('累计净存入不等于资产余额；账户余额以实际核对为准。')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="900" w:bottom="1134" w:left="900"/></w:sectPr></w:body></w:document>';
     final files = {
-      '[Content_Types].xml':
-          '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',
-      '_rels/.rels':
-          '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
+      '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',
+      '_rels/.rels': '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
       'word/document.xml': document,
     };
     final zip = Archive();

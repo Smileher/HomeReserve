@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:uuid/uuid.dart';
 
 const sharedOwner = 'shared';
@@ -13,9 +14,8 @@ String money(int cents) =>
     '${cents < 0 ? '-' : ''}¥${(cents.abs() ~/ 100).toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}.${(cents.abs() % 100).toString().padLeft(2, '0')}';
 int parseMoney(String text, {bool signed = false}) {
   final value = text.trim();
-  if (!RegExp(
-    signed ? r'^-?\d{1,12}(\.\d{1,2})?$' : r'^\d{1,12}(\.\d{1,2})?$',
-  ).hasMatch(value)) {
+  if (!RegExp(signed ? r'^-?\d{1,12}(\.\d{1,2})?$' : r'^\d{1,12}(\.\d{1,2})?$')
+      .hasMatch(value)) {
     throw const FormatException('请输入有效金额，最多两位小数');
   }
   final negative = value.startsWith('-');

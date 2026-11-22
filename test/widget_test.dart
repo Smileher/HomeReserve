@@ -26,8 +26,18 @@ void main() {
     await tester.tap(find.byTooltip('编辑月度记录').last);
     await tester.pumpAndSettle();
     expect(find.text('本月收入（元，可留空）'), findsOneWidget);
-    await tester.enterText(find.byWidgetPredicate((w) => w is TextField && w.decoration?.labelText == '本月收入（元，可留空）'), '12345.67');
-    await tester.enterText(find.byWidgetPredicate((w) => w is TextField && w.decoration?.labelText == '本月净存入（元，可为负，可留空）'), '-200.29');
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.labelText == '本月收入（元，可留空）',
+      ),
+      '12345.67',
+    );
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.labelText == '本月净存入（元，可为负，可留空）',
+      ),
+      '-200.29',
+    );
     await tester.tap(find.text('保存'));
     await tester.pumpAndSettle();
     final record = store.book.monthly('member-min', monthKey(DateTime.now()))!;
@@ -45,7 +55,12 @@ void main() {
     await store.initialize();
     await store.settings({'theme': 'dark'});
     router.go('/assets');
-    await tester.pumpWidget(ProviderScope(overrides: [storeProvider.overrideWithValue(store)], child: const HomeReserveApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storeProvider.overrideWithValue(store)],
+        child: const HomeReserveApp(),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('存款与理财'), findsOneWidget);
     expect(find.text('添加第一个账户'), findsOneWidget);

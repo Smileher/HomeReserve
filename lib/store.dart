@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
 import 'domain.dart';
 
 class LocalDatabase extends GeneratedDatabase {
@@ -29,9 +31,8 @@ class LocalDatabase extends GeneratedDatabase {
   );
   Future<Book> readBook() async {
     final rows = await customSelect('SELECT body FROM entities').get();
-    final prefs = await customSelect(
-      'SELECT body FROM preferences WHERE id=1',
-    ).get();
+    final prefs = await customSelect('SELECT body FROM preferences WHERE id=1')
+        .get();
     return Book.fromJson({
       'entries': rows.map((r) => jsonDecode(r.read<String>('body'))).toList(),
       'settings': prefs.isEmpty
@@ -164,9 +165,8 @@ class AppStore extends ChangeNotifier {
     await folder.create(recursive: true);
     final filename =
         'backup-${DateTime.now().toUtc().toIso8601String().replaceAll(':', '-')}.json';
-    await File(
-      p.join(folder.path, filename),
-    ).writeAsString(jsonEncode(book.toJson()), encoding: utf8, flush: true);
+    await File(p.join(folder.path, filename))
+        .writeAsString(jsonEncode(book.toJson()), encoding: utf8, flush: true);
     final files = await folder
         .list()
         .where((e) => e is File && e.path.endsWith('.json'))

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
+
 import 'package:file_selector/file_selector.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:material_ui/material_ui.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import 'domain.dart';
 import 'reports.dart';
 import 'store.dart';
@@ -285,9 +287,8 @@ class _BookPageState extends ConsumerState<BookPage> {
   String get month => monthKey(selected);
   void message(Object text) {
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('$text')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$text')));
     }
   }
 
@@ -540,9 +541,8 @@ class _BookPageState extends ConsumerState<BookPage> {
             ),
           ],
         ),
-        color: Theme.of(
-          context,
-        ).colorScheme.primaryContainer.withValues(alpha: .5),
+        color: Theme.of(context).colorScheme.primaryContainer
+            .withValues(alpha: .5),
       ),
       metricGrid([
         metric('本月收入', money(summary.income), Icons.south_west_rounded),
@@ -970,21 +970,64 @@ class _BookPageState extends ConsumerState<BookPage> {
   }
 
   Widget assetDistribution() {
-    final values = book.accounts.map((a) => (a, book.latestBalance(a.id)?.data['amount'] as int? ?? 0)).where((a) => a.$2 > 0).toList();
+    final values = book.accounts
+        .map((a) => (a, book.latestBalance(a.id)?.data['amount'] as int? ?? 0))
+        .where((a) => a.$2 > 0)
+        .toList();
     final total = values.fold(0, (sum, value) => sum + value.$2);
-    const colors = [Color(0xff27836d), Color(0xff7d91ba), Color(0xffc5a16e), Color(0xff987eab), Color(0xff7f9c8d), Color(0xffbb8585)];
+    const colors = [
+      Color(0xff27836d),
+      Color(0xff7d91ba),
+      Color(0xffc5a16e),
+      Color(0xff987eab),
+      Color(0xff7f9c8d),
+      Color(0xffbb8585),
+    ];
     if (total == 0) return card(muted('核对账户余额后，这里会显示资产分布。'));
-    return card(Column(children: [
-      SizedBox(height: 190, child: PieChart(PieChartData(centerSpaceRadius: 48, sectionsSpace: 4, sections: [
-        for (var i = 0; i < values.length; i++) PieChartSectionData(value: values[i].$2.toDouble(), color: colors[i % colors.length], radius: 35, showTitle: false),
-      ]))),
-      const SizedBox(height: 16),
-      for (var i = 0; i < values.length; i++) Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [
-        Icon(Icons.circle, size: 10, color: colors[i % colors.length]), const SizedBox(width: 10),
-        Expanded(child: Text(values[i].$1.label)), Text('${money(values[i].$2)}  ·  ${(values[i].$2 / total * 100).toStringAsFixed(1)}%'),
-      ])),
-      muted('使用各账户最近已记录余额，核对时点可能不同。'),
-    ]));
+    return card(
+      Column(
+        children: [
+          SizedBox(
+            height: 190,
+            child: PieChart(
+              PieChartData(
+                centerSpaceRadius: 48,
+                sectionsSpace: 4,
+                sections: [
+                  for (var i = 0; i < values.length; i++)
+                    PieChartSectionData(
+                      value: values[i].$2.toDouble(),
+                      color: colors[i % colors.length],
+                      radius: 35,
+                      showTitle: false,
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (var i = 0; i < values.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.circle,
+                    size: 10,
+                    color: colors[i % colors.length],
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(values[i].$1.label)),
+                  Text(
+                    '${money(values[i].$2)}  ·  ${(values[i].$2 / total * 100).toStringAsFixed(1)}%',
+                  ),
+                ],
+              ),
+            ),
+          muted('使用各账户最近已记录余额，核对时点可能不同。'),
+        ],
+      ),
+    );
   }
 
   Widget chart(int count, {bool rolling = false}) {
@@ -1215,7 +1258,10 @@ class _BookPageState extends ConsumerState<BookPage> {
   ];
 
   Future<void> openUrl(String url) => guard(() async {
-    if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
+    if (!await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    )) {
       throw const FormatException('无法打开链接，请检查浏览器和网络');
     }
   });
@@ -1254,8 +1300,7 @@ class _BookPageState extends ConsumerState<BookPage> {
       'pdf' => 'application/pdf',
       'xlsx' =>
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'docx' =>
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       _ => 'text/csv',
     });
   });
@@ -1333,9 +1378,7 @@ class _BookPageState extends ConsumerState<BookPage> {
                       } catch (e) {
                         if (c.mounted) {
                           update(() {
-                            error = e is FormatException
-                                ? e.message
-                                : '$e';
+                            error = e is FormatException ? e.message : '$e';
                             saving = false;
                           });
                         }
@@ -1548,7 +1591,9 @@ class _BookPageState extends ConsumerState<BookPage> {
             return;
           }
         }
-        if (original != null && existing != null && existing.id != original.id) {
+        if (original != null &&
+            existing != null &&
+            existing.id != original.id) {
           throw const FormatException('该日期已有记录，请直接编辑当天记录');
         }
         await store.put(
@@ -1707,10 +1752,19 @@ class _BookPageState extends ConsumerState<BookPage> {
           );
           next.entries[allocation.id] = allocation;
         }
-        for (final removed in old.where((a) => !next.entries.containsKey(a.id))) {
-          final marker = Entry(id: 'deleted-${removed.id}', kind: 'tombstone', data: {
-            'key': book.businessKey(removed), 'deletedKind': removed.kind, 'originalId': removed.id, 'label': removed.label,
-          });
+        for (final removed in old.where(
+          (a) => !next.entries.containsKey(a.id),
+        )) {
+          final marker = Entry(
+            id: 'deleted-${removed.id}',
+            kind: 'tombstone',
+            data: {
+              'key': book.businessKey(removed),
+              'deletedKind': removed.kind,
+              'originalId': removed.id,
+              'label': removed.label,
+            },
+          );
           next.entries[marker.id] = marker;
         }
         await store.commit(next);
@@ -1891,9 +1945,12 @@ class _ImportDialogState extends State<ImportDialog> {
     final months = p.book.months.map((e) => e.data['month'] as String).toList()
       ..sort();
     final offset = p.offset;
-    final localTime = DateTime.parse(
-      p.exportedAt,
-    ).toUtc().add(Duration(minutes: offset)).toString().split('.').first;
+    final localTime = DateTime.parse(p.exportedAt)
+        .toUtc()
+        .add(Duration(minutes: offset))
+        .toString()
+        .split('.')
+        .first;
     return AlertDialog(
       title: const Text('导入前，先确认一下'),
       content: SizedBox(

@@ -13,7 +13,7 @@ manifest = ROOT / "android/app/src/main/AndroidManifest.xml"
 text = manifest.read_text(encoding="utf-8").replace('android:label="home_reserve"', 'android:label="家有余" android:allowBackup="false"')
 manifest.write_text(text, encoding="utf-8")
 gradle = ROOT / "android/app/build.gradle.kts"
-text = gradle.read_text(encoding="utf-8").replace("minSdk = flutter.minSdkVersion", "minSdk = 26")
+text = re.sub(r"minSdk = (?:flutter.minSdkVersion|\d+)", "minSdk = 31", gradle.read_text(encoding="utf-8"))
 if 'create("release")' not in text:
     text = text.replace("    buildTypes {", '''    signingConfigs {
         create("release") {
@@ -24,6 +24,7 @@ if 'create("release")' not in text:
         }
     }
     buildTypes {''').replace('signingConfig = signingConfigs.getByName("debug")', 'signingConfig = signingConfigs.getByName("release")')
+text = text.replace("            // TODO: Add your own signing config for the release build.\n", "").replace("            // Signing with the debug keys for now, so `flutter run --release` works.\n", "")
 gradle.write_text(text, encoding="utf-8")
 
 config = ROOT / "macos/Runner/Configs/AppInfo.xcconfig"

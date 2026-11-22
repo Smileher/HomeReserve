@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:archive/archive.dart';
@@ -6,6 +7,7 @@ import 'package:excel/excel.dart';
 import 'package:home_reserve/domain.dart';
 import 'package:home_reserve/reports.dart';
 import 'package:home_reserve/store.dart';
+
 import 'domain_test.dart' as fixture;
 
 void main() {
@@ -22,7 +24,10 @@ void main() {
     final book = fixture.sample();
     final report = ReportData(book, 2026);
     final excel = Excel.decodeBytes(report.xlsx());
-    expect(excel.tables['月度记录']!.rows[1][2]!.value, anyOf(isA<DoubleCellValue>(), isA<IntCellValue>()));
+    expect(
+      excel.tables['月度记录']!.rows[1][2]!.value,
+      anyOf(isA<DoubleCellValue>(), isA<IntCellValue>()),
+    );
     final imported = parseTable(utf8.encode(report.csv()), 'csv', book);
     expect(imported.book.months.single.data['saving'], 300000);
     expect(imported.book.months.single.data['note'], '生活 & 储蓄');
@@ -36,7 +41,10 @@ void main() {
   });
   test('CSV 文本不会成为公式，同时保留负净存入', () {
     final book = fixture.sample();
-    book.entries['month'] = book.entries['month']!.change({'note': '-123+456', 'saving': -1203});
+    book.entries['month'] = book.entries['month']!.change({
+      'note': '-123+456',
+      'saving': -1203,
+    });
     final csv = ReportData(book, 2026).csv();
     expect(csv, contains("'-123+456"));
     expect(csv, contains('"-12.03"'));

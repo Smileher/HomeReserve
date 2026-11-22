@@ -1,5 +1,5 @@
 name: home_reserve
-description: 给 min 制作，和 he 一起记录家庭储蓄与资产。
+description: 离线家庭收入、储蓄与账户资产记录工具，支持 Android、Windows、macOS。
 publish_to: none
 version: 1.0.0+1
 environment:

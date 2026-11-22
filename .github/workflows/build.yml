@@ -81,7 +81,7 @@ jobs:
         if: matrix.platform == 'android'
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - run: flutter pub get --enforce-lockfile
       - name: Android 正式签名与构建
         if: matrix.platform == 'android'
@@ -97,6 +97,7 @@ jobs:
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
           chmod +x android/gradlew
           flutter build apk --release
+          "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner" verify --verbose build/app/outputs/flutter-apk/app-release.apk
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk dist/HomeReserve-android.apk
       - name: Windows 构建
