@@ -162,7 +162,10 @@ class ReportData {
           padding: const pw.EdgeInsets.only(bottom: 16),
           child: pw.Text(
             '家有余 · $year 年家庭报告',
-            style: pw.TextStyle(fontSize: 20, color: PdfColors.teal800),
+            style: pw.TextStyle(
+              fontSize: 20,
+              color: PdfColor.fromInt(0xff526b91),
+            ),
           ),
         ),
         footer: (c) => pw.Align(
@@ -195,7 +198,7 @@ class ReportData {
               ),
               datasets: [
                 pw.LineDataSet(
-                  color: PdfColors.teal,
+                  color: PdfColor.fromInt(0xffb18c54),
                   data: [
                     for (var i = 1; i <= 12; i++)
                       pw.PointChartValue(

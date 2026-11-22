@@ -61,7 +61,7 @@ class HomeReserveApp extends ConsumerWidget {
         ThemeData theme(Brightness brightness) {
           final dark = brightness == Brightness.dark;
           final scheme = ColorScheme.fromSeed(
-            seedColor: const Color(0xff27836d),
+            seedColor: const Color(0xff526b91),
             brightness: brightness,
           );
           return ThemeData(
@@ -69,15 +69,15 @@ class HomeReserveApp extends ConsumerWidget {
             colorScheme: scheme,
             brightness: brightness,
             scaffoldBackgroundColor: dark
-                ? const Color(0xff151718)
-                : const Color(0xfff4f5f7),
+                ? const Color(0xff171719)
+                : const Color(0xfff4f4f6),
             appBarTheme: const AppBarTheme(
               backgroundColor: Colors.transparent,
               scrolledUnderElevation: 0,
             ),
             cardTheme: CardThemeData(
               elevation: 0,
-              color: dark ? const Color(0xff212425) : Colors.white,
+              color: dark ? const Color(0xff232326) : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(22),
               ),
@@ -85,8 +85,8 @@ class HomeReserveApp extends ConsumerWidget {
             inputDecorationTheme: InputDecorationTheme(
               filled: true,
               fillColor: dark
-                  ? const Color(0xff2b2f30)
-                  : const Color(0xfff2f4f5),
+                  ? const Color(0xff2c2c30)
+                  : const Color(0xffeff0f3),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
@@ -976,12 +976,12 @@ class _BookPageState extends ConsumerState<BookPage> {
         .toList();
     final total = values.fold(0, (sum, value) => sum + value.$2);
     const colors = [
-      Color(0xff27836d),
-      Color(0xff7d91ba),
-      Color(0xffc5a16e),
-      Color(0xff987eab),
-      Color(0xff7f9c8d),
-      Color(0xffbb8585),
+      Color(0xff6683ad),
+      Color(0xffb18c54),
+      Color(0xff9183ad),
+      Color(0xff8293a3),
+      Color(0xffb37d83),
+      Color(0xff9b9788),
     ];
     if (total == 0) return card(muted('核对账户余额后，这里会显示资产分布。'));
     return card(
@@ -1048,7 +1048,7 @@ class _BookPageState extends ConsumerState<BookPage> {
                 '● 收入',
                 style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
-              const Text('● 净存入', style: TextStyle(color: Color(0xff7d91ba))),
+              const Text('● 净存入', style: TextStyle(color: Color(0xffb18c54))),
             ],
           ),
           const SizedBox(height: 24),
@@ -1091,7 +1091,7 @@ class _BookPageState extends ConsumerState<BookPage> {
                     LineChartBarData(
                       color: series == 0
                           ? Theme.of(context).colorScheme.primary
-                          : const Color(0xff7d91ba),
+                          : const Color(0xffb18c54),
                       barWidth: 2.5,
                       isCurved: false,
                       dotData: const FlDotData(show: true),

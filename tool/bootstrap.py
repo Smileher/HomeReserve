@@ -63,12 +63,12 @@ from PIL import Image, ImageDraw
 def icon(size):
     image = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    draw.rounded_rectangle((0, 0, 1023, 1023), radius=220, fill="#1f6f5b")
-    draw.line([(205, 470), (512, 220), (819, 470)], fill="#f1f7eb", width=56, joint="curve")
-    draw.rounded_rectangle((285, 432, 740, 805), radius=72, fill="#f1f7eb")
-    draw.ellipse((415, 480, 610, 675), fill="#a1c7a4")
-    draw.line([(512, 748), (512, 563)], fill="#1f6f5b", width=26)
-    draw.ellipse((505, 530, 645, 610), fill="#1f6f5b")
+    draw.rounded_rectangle((0, 0, 1023, 1023), radius=220, fill="#313e52")
+    draw.line([(205, 470), (512, 220), (819, 470)], fill="#f5f6fa", width=56, joint="curve")
+    draw.rounded_rectangle((285, 432, 740, 805), radius=72, fill="#f5f6fa")
+    draw.ellipse((415, 480, 610, 675), fill="#aab8ce")
+    draw.line([(512, 748), (512, 563)], fill="#313e52", width=26)
+    draw.ellipse((505, 530, 645, 610), fill="#313e52")
     return image.resize((size, size), Image.Resampling.LANCZOS)
 for density, size in {"mdpi":48,"hdpi":72,"xhdpi":96,"xxhdpi":144,"xxxhdpi":192}.items():
     target=ROOT / f"android/app/src/main/res/mipmap-{density}/ic_launcher.png"
