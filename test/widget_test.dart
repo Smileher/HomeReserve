@@ -36,7 +36,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     store.dispose();
   });
-  testWidgets('桌面深色主题与资产页支持大字体', (tester) async {
+  testWidgets('桌面深色主题与资产空态可用', (tester) async {
     tester.view.physicalSize = const Size(1440, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);

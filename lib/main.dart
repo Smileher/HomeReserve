@@ -1290,8 +1290,9 @@ class _BookPageState extends ConsumerState<BookPage> {
   }) async {
     String? error;
     bool saving = false;
-    await showDialog<void>(
+    final route = DialogRoute<void>(
       context: context,
+      barrierDismissible: false,
       builder: (dialog) => StatefulBuilder(
         builder: (c, update) => AlertDialog(
           title: Text(title),
@@ -1346,6 +1347,9 @@ class _BookPageState extends ConsumerState<BookPage> {
         ),
       ),
     );
+    await Navigator.of(context, rootNavigator: true).push(route);
+    // The pop future completes before the exit animation releases the fields.
+    await route.completed;
     if (mounted) setState(() {});
   }
 
