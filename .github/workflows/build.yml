@@ -102,6 +102,13 @@ jobs:
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
           chmod +x android/gradlew
           flutter build apk --release --target-platform android-arm64
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('build/app/outputs/flutter-apk/app-release.apk') as apk:
+              abis = {name.split('/')[1] for name in apk.namelist() if name.startswith('lib/')}
+          assert abis == {'arm64-v8a'}, f'Unexpected native architectures: {abis}'
+          print('Native architecture verified: arm64-v8a')
+          PY
           "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner" verify --verbose build/app/outputs/flutter-apk/app-release.apk
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk dist/HomeReserve-android-arm64.apk
