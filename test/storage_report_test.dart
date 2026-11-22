@@ -49,4 +49,17 @@ void main() {
     expect(csv, contains("'-123+456"));
     expect(csv, contains('"-12.03"'));
   });
+  test('SQLite 事务失败后保留原始账本', () async {
+    final db = LocalDatabase(NativeDatabase.memory());
+    await db.save(Book(), fixture.sample());
+    await expectLater(
+      db.transaction(() async {
+        await db.customStatement('DELETE FROM entities');
+        throw StateError('模拟导入写入失败');
+      }),
+      throwsStateError,
+    );
+    expect((await db.readBook()).months.length, 1);
+    await db.close();
+  });
 }

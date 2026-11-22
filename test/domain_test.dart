@@ -51,6 +51,13 @@ Book sample() {
 }
 
 void main() {
+  test('导入也必须遵守归档余额为零规则', () {
+    final book = sample();
+    book.entries['bank'] = book.entries['bank']!.change({'archived': true});
+    expect(() => book.validate(), throwsFormatException);
+    book.entries['balance'] = book.entries['balance']!.change({'amount': 0});
+    book.validate();
+  });
   test('金额以分精确处理，不接受超过两位小数或科学计数法', () {
     expect(parseMoney('0.29'), 29);
     expect(parseMoney('-12.03', signed: true), -1203);

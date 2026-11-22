@@ -264,6 +264,11 @@ class Book {
           throw FormatException('不支持的记录类型：${e.kind}');
       }
     }
+    for (final account in accounts.where((a) => a.data['archived'] == true)) {
+      if (latestBalance(account.id)?.data['amount'] != 0) {
+        throw FormatException('${account.label}：归档账户的最新核对余额必须为零');
+      }
+    }
     for (final record in months) {
       final list = allocations.where((a) => a.data['record'] == record.id);
       final total = list.fold(0, (v, e) => v + (e.data['amount'] as int));
