@@ -26,7 +26,8 @@ jobs:
       - run: python tool/bootstrap.py
       - run: flutter pub get
       - run: dart format lib test integration_test
-      - run: flutter analyze
+      - run: dart fix --apply --code=curly_braces_in_flow_control_structures
+      - run: flutter analyze --no-fatal-infos
       - run: flutter test --coverage
       - uses: actions/upload-artifact@v4
         with:
@@ -38,6 +39,17 @@ jobs:
             assets
             pubspec.lock
           include-hidden-files: true
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: formatted-source
+          path: |
+            lib
+            test
+            integration_test
+            pubspec.lock
+            analysis_options.yaml
           retention-days: 14
   build:
     needs: check

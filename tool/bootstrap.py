@@ -14,7 +14,8 @@ text = manifest.read_text(encoding="utf-8").replace('android:label="home_reserve
 manifest.write_text(text, encoding="utf-8")
 gradle = ROOT / "android/app/build.gradle.kts"
 text = gradle.read_text(encoding="utf-8").replace("minSdk = flutter.minSdkVersion", "minSdk = 26")
-text = text.replace("    buildTypes {", '''    signingConfigs {
+if 'create("release")' not in text:
+    text = text.replace("    buildTypes {", '''    signingConfigs {
         create("release") {
             storeFile = file(System.getenv("ANDROID_KEYSTORE_PATH") ?: "release.jks")
             storePassword = System.getenv("ANDROID_STORE_PASSWORD")
@@ -34,7 +35,8 @@ config.write_text(text, encoding="utf-8")
 for filename in ["DebugProfile.entitlements", "Release.entitlements"]:
     target = ROOT / "macos/Runner" / filename
     text = target.read_text(encoding="utf-8")
-    text = text.replace("</dict>", "<key>com.apple.security.files.user-selected.read-write</key><true/>\n</dict>")
+    if "com.apple.security.files.user-selected.read-write" not in text:
+        text = text.replace("</dict>", "<key>com.apple.security.files.user-selected.read-write</key><true/>\n</dict>")
     target.write_text(text, encoding="utf-8")
 project = ROOT / "macos/Runner.xcodeproj/project.pbxproj"
 project.write_text(re.sub(r"MACOSX_DEPLOYMENT_TARGET = [^;]+;", "MACOSX_DEPLOYMENT_TARGET = 13.0;", project.read_text(encoding="utf-8")), encoding="utf-8")

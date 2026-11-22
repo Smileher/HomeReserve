@@ -123,7 +123,7 @@ class _BookPageState extends ConsumerState<BookPage> {
         if(record.data['saving']!=null) muted('未分配：${money((record.data['saving'] as int)-book.allocations.where((a)=>a.data['record']==record.id).fold(0,(v,a)=>v+(a.data['amount'] as int)))} · 分配不自动变更账户余额'),
         if(record.source.isNotEmpty) muted('来源：${record.source} · ${record.importedAt.split('T').first} 导入'),
       ]else...[const SizedBox(height:16),OutlinedButton.icon(onPressed:()=>editMonth(member,null),icon:const Icon(Icons.add),label:const Text('填写这个月'))],
-    ]})),
+    ]);})),
     muted('净存入允许负数。留空表示未填写，输入 0 表示已确认没有。'),
   ];
   List<Widget> assets()=>[
@@ -263,7 +263,7 @@ class _ImportDialogState extends State<ImportDialog> {
     ]))),actions:[TextButton(onPressed:saving?null:()=>Navigator.pop(context),child:const Text('取消')),FilledButton(onPressed:saving||(!prepared&&!plan.restore)?null:() async {
       if(plan.restore){final accepted=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('确认完整替换？'),content:const Text('当前全部业务数据将替换为这份数据包。替换前会自动备份本机数据。'),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('返回')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('确认替换'))]));if(accepted!=true)return;}
       setState(()=>saving=true);
-      try{final result=plan.result();await widget.store.commit(result,backup:true);if(context.mounted){Navigator.pop(context);ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(plan.restore?'完整恢复完成':'导入完成：新增 ${plan.additions.length}，替换 ${plan.conflicts.where((c)=>c.useIncoming).length}，相同跳过 ${plan.sameCount}'))));}}
+      try{final result=plan.result();await widget.store.commit(result,backup:true);if(context.mounted){final messenger=ScaffoldMessenger.of(context);Navigator.pop(context);messenger.showSnackBar(SnackBar(content:Text(plan.restore?'完整恢复完成':'导入完成：新增 ${plan.additions.length}，替换 ${plan.conflicts.where((c)=>c.useIncoming).length}，相同跳过 ${plan.sameCount}')));}}
       catch(e){if(mounted)setState((){error='未写入数据：$e\n如涉及月度净存入和账户分配，请一起核对关联冲突。';saving=false;});}
     },child:Text(saving?'正在写入…':plan.restore?'完整恢复':'确认合并导入'))]);
   }
