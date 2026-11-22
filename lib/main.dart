@@ -3,14 +3,18 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
+import 'package:cupertino_ui/cupertino_ui.dart' as cupertino;
 import 'package:file_selector/file_selector.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart' as glass;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'app_widgets.dart';
 import 'domain.dart';
 import 'reports.dart';
 import 'store.dart';
@@ -40,6 +44,7 @@ final router = GoRouter(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await glass.LiquidGlassWidgets.initialize(enablePerformanceMonitor: false);
   final store = AppStore();
   runApp(
     ProviderScope(
@@ -55,112 +60,120 @@ class HomeReserveApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final store = ref.watch(storeProvider);
-    return AnimatedBuilder(
-      animation: store,
-      builder: (c, _) {
-        ThemeData theme(Brightness brightness) {
-          final dark = brightness == Brightness.dark;
-          final scheme = ColorScheme.fromSeed(
-            seedColor: const Color(0xff526b91),
-            brightness: brightness,
-          );
-          return ThemeData(
-            useMaterial3: true,
-            colorScheme: scheme,
-            brightness: brightness,
-            scaffoldBackgroundColor: dark
-                ? const Color(0xff171719)
-                : const Color(0xfff4f4f6),
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.transparent,
-              scrolledUnderElevation: 0,
-            ),
-            cardTheme: CardThemeData(
-              elevation: 0,
-              color: dark ? const Color(0xff232326) : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-              ),
-            ),
-            inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-              fillColor: dark
-                  ? const Color(0xff2c2c30)
-                  : const Color(0xffeff0f3),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.all(16),
-            ),
-            filledButtonTheme: FilledButtonThemeData(
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 17,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-            textTheme: Typography.material2021().black.apply(
-              bodyColor: scheme.onSurface,
-              displayColor: scheme.onSurface,
-            ),
-            dividerTheme: DividerThemeData(
-              color: scheme.outlineVariant.withValues(alpha: .5),
-              space: 24,
-            ),
-          );
-        }
-
-        final mode = switch (store.book.settings['theme']) {
-          'light' => ThemeMode.light,
-          'dark' => ThemeMode.dark,
-          _ => ThemeMode.system,
-        };
-        return MaterialApp.router(
-          title: '家有余',
-          debugShowCheckedModeBanner: false,
-          theme: theme(Brightness.light),
-          darkTheme: theme(Brightness.dark),
-          themeMode: mode,
-          routerConfig: router,
-          locale: const Locale('zh', 'CN'),
-          supportedLocales: const [Locale('zh', 'CN')],
-          localizationsDelegates: GlobalMaterialLocalizations.delegates,
-          builder: (c, child) {
-            if (store.error != null) {
-              return Scaffold(
-                body: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text('${store.error}\n原始数据未被覆盖。请关闭软件后备份数据目录再排查。'),
-                  ),
-                ),
-              );
-            }
-            if (!store.ready) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            return Stack(
-              children: [
-                child!,
-                if (store.busy)
-                  const Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: LinearProgressIndicator(),
-                  ),
-              ],
+    return glass.LiquidGlassWidgets.wrap(
+      brightnessResolver: Theme.maybeBrightnessOf,
+      adaptiveQuality: true,
+      child: AnimatedBuilder(
+        animation: store,
+        builder: (c, _) {
+          ThemeData theme(Brightness brightness) {
+            final dark = brightness == Brightness.dark;
+            final scheme = ColorScheme.fromSeed(
+              seedColor: const Color(0xff526b91),
+              brightness: brightness,
             );
-          },
-        );
-      },
+            return ThemeData(
+              useMaterial3: true,
+              colorScheme: scheme,
+              brightness: brightness,
+              scaffoldBackgroundColor: dark
+                  ? const Color(0xff171719)
+                  : const Color(0xfff4f4f6),
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.transparent,
+                scrolledUnderElevation: 0,
+              ),
+              cardTheme: CardThemeData(
+                elevation: 0,
+                color: dark ? const Color(0xff232326) : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                ),
+              ),
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: dark
+                    ? const Color(0xff2c2c30)
+                    : const Color(0xffeff0f3),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.all(16),
+              ),
+              filledButtonTheme: FilledButtonThemeData(
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 17,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+              textTheme: Typography.material2021().black.apply(
+                bodyColor: scheme.onSurface,
+                displayColor: scheme.onSurface,
+              ),
+              dividerTheme: DividerThemeData(
+                color: scheme.outlineVariant.withValues(alpha: .5),
+                space: 24,
+              ),
+            );
+          }
+
+          final mode = switch (store.book.settings['theme']) {
+            'light' => ThemeMode.light,
+            'dark' => ThemeMode.dark,
+            _ => ThemeMode.system,
+          };
+          return MaterialApp.router(
+            title: '家有余',
+            debugShowCheckedModeBanner: false,
+            theme: theme(Brightness.light),
+            darkTheme: theme(Brightness.dark),
+            themeMode: mode,
+            routerConfig: router,
+            locale: const Locale('zh', 'CN'),
+            supportedLocales: const [Locale('zh', 'CN')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            builder: (c, child) {
+              if (store.error != null) {
+                return Scaffold(
+                  body: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text('${store.error}\n原始数据未被覆盖。请关闭软件后备份数据目录再排查。'),
+                    ),
+                  ),
+                );
+              }
+              if (!store.ready) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+              // Bridge SDK Cupertino controls used by the glass library during the UI split.
+              // ignore: deprecated_member_use
+              return cupertino.CupertinoUiCompatibilityBridge(
+                child: Stack(
+                  children: [
+                    child!,
+                    if (store.busy)
+                      const Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: LinearProgressIndicator(),
+                      ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
@@ -180,93 +193,124 @@ class AppFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final index = math.max(0, destinations.indexWhere((d) => d.$3 == path));
+    final colors = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (c, box) {
         final desktop = box.maxWidth >= 850;
+        // Keep the existing snackbar/error channel while glass owns the page chrome.
         return Scaffold(
-          body: SafeArea(
-            child: Row(
-              children: [
-                if (desktop)
-                  SizedBox(
-                    width: 220,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 32, 12, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 16, bottom: 6),
-                            child: Icon(
-                              Icons.spa_outlined,
-                              color: Theme.of(c).colorScheme.primary,
-                              size: 36,
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.only(left: 16, bottom: 4),
-                            child: Text(
-                              '家有余',
-                              style: TextStyle(
-                                fontSize: 27,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.only(left: 16, bottom: 30),
-                            child: Text(
-                              '一起攒下小美好',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          ),
-                          for (var i = 0; i < destinations.length; i++)
+          backgroundColor: Colors.transparent,
+          resizeToAvoidBottomInset: false,
+          body: glass.GlassScaffold(
+            statusBarStyle: glass.GlassStatusBarStyle.auto,
+            background: const AppBackdrop(),
+            body: SafeArea(
+              bottom: desktop,
+              child: Row(
+                children: [
+                  if (desktop)
+                    SizedBox(
+                      width: 218,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 32, 14, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: ListTile(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                              padding: const EdgeInsets.only(
+                                left: 16,
+                                bottom: 12,
+                              ),
+                              child: Icon(
+                                Icons.cottage_outlined,
+                                color: colors.primary,
+                                size: 36,
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.only(left: 16, bottom: 4),
+                              child: Text(
+                                '家有余',
+                                style: TextStyle(
+                                  fontSize: 27,
+                                  fontWeight: FontWeight.w700,
                                 ),
-                                selected: i == index,
-                                selectedTileColor: Theme.of(c)
-                                    .colorScheme
-                                    .primaryContainer
-                                    .withValues(alpha: .6),
-                                leading: Icon(destinations[i].$2),
-                                title: Text(destinations[i].$1),
-                                onTap: () => c.go(destinations[i].$3),
                               ),
                             ),
-                          const Spacer(),
-                          const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Text(
-                              'FOR MIN, WITH LOVE\nMADE BY HE',
-                              style: TextStyle(
-                                fontSize: 10,
-                                letterSpacing: 1.5,
-                                height: 1.8,
+                            const Padding(
+                              padding: EdgeInsets.only(left: 16, bottom: 28),
+                              child: Text(
+                                '记录积累，从容生活',
+                                style: TextStyle(fontSize: 12),
                               ),
                             ),
-                          ),
-                        ],
+                            glass.GlassSegmentedControl(
+                              selectedTextStyle: Theme.of(c)
+                                  .textTheme
+                                  .labelLarge,
+                              unselectedTextStyle: Theme.of(c)
+                                  .textTheme
+                                  .labelLarge,
+                              direction: Axis.vertical,
+                              height: 190,
+                              segmentExtent: 54,
+                              borderRadius: 24,
+                              selectedIndex: index,
+                              activeSelectedColor: colors.primary,
+                              onSegmentSelected: (i) =>
+                                  c.go(destinations[i].$3),
+                              segments: [
+                                for (final d in destinations)
+                                  glass.GlassSegment(
+                                    semanticLabel: '导航：${d.$1}',
+                                    icon: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(d.$2, size: 20),
+                                        const SizedBox(width: 12),
+                                        Text(d.$1),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const Spacer(),
+                            const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text(
+                                '本地记录\n慢慢积累，从容生活',
+                                style: TextStyle(fontSize: 11, height: 1.8),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                Expanded(child: child),
-              ],
+                  Expanded(child: child),
+                ],
+              ),
             ),
+            bottomBar: desktop
+                ? null
+                : glass.GlassTabBar.bottom(
+                    selectedLabelStyle: Theme.of(c).textTheme.labelSmall,
+                    unselectedLabelStyle: Theme.of(c).textTheme.labelSmall,
+                    selectedIndex: index,
+                    onTabSelected: (i) => c.go(destinations[i].$3),
+                    horizontalPadding: 16,
+                    verticalPadding: 12,
+                    selectedIconColor: colors.primary,
+                    selectedLabelColor: colors.primary,
+                    tabs: [
+                      for (final d in destinations)
+                        glass.GlassTab(
+                          icon: Icon(d.$2),
+                          label: d.$1,
+                          semanticLabel: '导航：${d.$1}',
+                        ),
+                    ],
+                  ),
           ),
-          bottomNavigationBar: desktop
-              ? null
-              : NavigationBar(
-                  selectedIndex: index,
-                  onDestinationSelected: (i) => c.go(destinations[i].$3),
-                  destinations: [
-                    for (final d in destinations)
-                      NavigationDestination(icon: Icon(d.$2), label: d.$1),
-                  ],
-                ),
         );
       },
     );
@@ -285,6 +329,12 @@ class _BookPageState extends ConsumerState<BookPage> {
   AppStore get store => ref.read(storeProvider);
   Book get book => store.book;
   String get month => monthKey(selected);
+  // Match the user-entered dedication trigger without publishing a personal name.
+  bool get showDedication => book.members.any(
+    (member) =>
+        sha256.convert(utf8.encode(member.label.trim())).toString() ==
+        'a0516d3a00aca894efa60e75c7a805b766c2ebba3f1bdc88e44987a5af01bda6',
+  );
   void message(Object text) {
     if (mounted) {
       ScaffoldMessenger.of(context)
@@ -314,7 +364,7 @@ class _BookPageState extends ConsumerState<BookPage> {
       '/assets' => '每一份安心，都有它的位置',
       '/analysis' => '让数字讲述我们一起积攒的时光',
       '/settings' => '按喜欢的方式，照顾好我们的记录',
-      _ => '给 min，和 he 一起积攒小美好',
+      _ => showDedication ? '给认真生活的你，把幸福慢慢攒下' : '记录家庭收入、储蓄与账户资产',
     };
     return SingleChildScrollView(
       padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 600 ? 20 : 36),
@@ -356,10 +406,14 @@ class _BookPageState extends ConsumerState<BookPage> {
     );
   }
 
-  Widget card(Widget child, {Color? color}) => Card(
+  Widget card(Widget child, {Color? color}) => glass.GlassContainer.card(
+    width: double.infinity,
     color: color,
+    surfaceStyle: glass.GlassSurfaceStyle.solid,
+    shape: const glass.LiquidRoundedSuperellipse(borderRadius: 26),
+    padding: const EdgeInsets.all(22),
     margin: const EdgeInsets.only(bottom: 16),
-    child: Padding(padding: const EdgeInsets.all(22), child: child),
+    child: child,
   );
   Widget section(String title, {Widget? trailing}) => Padding(
     padding: const EdgeInsets.only(top: 8, bottom: 14),
@@ -434,9 +488,117 @@ class _BookPageState extends ConsumerState<BookPage> {
       );
     },
   );
+  Future<void> choosePeriod({bool yearOnly = false}) async {
+    var year = selected.year;
+    var choosingYear = yearOnly;
+    final firstYear = math.min(1900, year);
+    final lastYear = math.max(2100, year);
+    final picked = await showDialog<DateTime>(
+      context: context,
+      builder: (dialog) => StatefulBuilder(
+        builder: (c, update) => AppDialog(
+          title: Text(yearOnly ? '选择年份' : '选择月份'),
+          content: SizedBox(
+            width: 360,
+            height: 330,
+            child: Column(
+              children: [
+                if (!yearOnly)
+                  Row(
+                    children: [
+                      AppIconButton(
+                        tooltip: '上一年',
+                        onPressed: year > firstYear
+                            ? () => update(() => year--)
+                            : null,
+                        icon: const Icon(Icons.chevron_left),
+                      ),
+                      Expanded(
+                        child: AppButton.icon(
+                          plain: true,
+                          onPressed: () =>
+                              update(() => choosingYear = !choosingYear),
+                          icon: const Icon(Icons.calendar_today_outlined),
+                          label: Text('$year 年'),
+                        ),
+                      ),
+                      AppIconButton(
+                        tooltip: '下一年',
+                        onPressed: year < lastYear
+                            ? () => update(() => year++)
+                            : null,
+                        icon: const Icon(Icons.chevron_right),
+                      ),
+                    ],
+                  ),
+                Expanded(
+                  child: choosingYear
+                      ? YearPicker(
+                          firstDate: DateTime(firstYear),
+                          lastDate: DateTime(lastYear, 12, 31),
+                          selectedDate: DateTime(year, selected.month),
+                          onChanged: (date) {
+                            if (yearOnly) {
+                              Navigator.pop(
+                                c,
+                                DateTime(date.year, selected.month),
+                              );
+                            } else {
+                              update(() {
+                                year = date.year;
+                                choosingYear = false;
+                              });
+                            }
+                          },
+                        )
+                      : GridView.count(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: 1.8,
+                          padding: const EdgeInsets.only(top: 12),
+                          children: [
+                            for (var value = 1; value <= 12; value++)
+                              AppButton.plain(
+                                selected:
+                                    year == selected.year &&
+                                    value == selected.month,
+                                onPressed: () =>
+                                    Navigator.pop(c, DateTime(year, value)),
+                                child: Text('$value 月'),
+                              ),
+                          ],
+                        ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            AppButton.plain(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('取消'),
+            ),
+            AppButton.plain(
+              onPressed: () => Navigator.pop(c, DateTime.now()),
+              child: Text(yearOnly ? '今年' : '本月'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mounted && picked != null) {
+      setState(
+        () => selected = DateTime(
+          picked.year,
+          yearOnly ? selected.month : picked.month,
+        ),
+      );
+    }
+  }
+
   Widget period({bool yearOnly = false}) => Row(
     children: [
-      IconButton(
+      AppIconButton(
         tooltip: '上一${yearOnly ? '年' : '月'}',
         onPressed: () => setState(
           () => selected = DateTime(
@@ -448,15 +610,29 @@ class _BookPageState extends ConsumerState<BookPage> {
       ),
       Expanded(
         child: Center(
-          child: Text(
-            yearOnly
-                ? '${selected.year} 年'
-                : '${selected.year} 年 ${selected.month} 月',
-            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
+          child: Tooltip(
+            message: yearOnly ? '选择年份' : '选择月份',
+            child: AppButton.icon(
+              plain: true,
+              onPressed: () => choosePeriod(yearOnly: yearOnly),
+              icon: const Icon(Icons.calendar_month_outlined, size: 20),
+              label: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  yearOnly
+                      ? '${selected.year} 年'
+                      : '${selected.year} 年 ${selected.month} 月',
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),
-      IconButton(
+      AppIconButton(
         tooltip: '下一${yearOnly ? '年' : '月'}',
         onPressed: () => setState(
           () => selected = DateTime(
@@ -487,7 +663,7 @@ class _BookPageState extends ConsumerState<BookPage> {
         muted(detail),
         if (onTap != null) ...[
           const SizedBox(height: 16),
-          FilledButton(onPressed: onTap, child: Text(action ?? '开始记录')),
+          AppButton.primary(onPressed: onTap, child: Text(action ?? '开始记录')),
         ],
       ],
     ),
@@ -517,7 +693,7 @@ class _BookPageState extends ConsumerState<BookPage> {
                 const Expanded(
                   child: Text('最近已记录资产', style: TextStyle(fontSize: 16)),
                 ),
-                IconButton(
+                AppIconButton(
                   tooltip: '查看账户',
                   onPressed: () => context.go('/assets'),
                   icon: const Icon(Icons.arrow_forward_rounded),
@@ -551,10 +727,14 @@ class _BookPageState extends ConsumerState<BookPage> {
           '本月储蓄率',
           summary.rate == null ? '—' : '${summary.rate!.toStringAsFixed(1)}%',
           Icons.donut_large_rounded,
-          hint: summary.complete ? '本月成员记录完整' : '部分成员尚未填完整',
+          hint: book.members.isEmpty
+              ? '添加成员后开始记录'
+              : summary.complete
+              ? '本月成员记录完整'
+              : '部分成员尚未填完整',
         ),
       ]),
-      if (!summary.complete)
+      if (book.members.isNotEmpty && !summary.complete)
         card(
           Row(
             children: [
@@ -563,7 +743,7 @@ class _BookPageState extends ConsumerState<BookPage> {
               Expanded(
                 child: Text('本月待补充：${summary.missingMembers.join('、')}'),
               ),
-              TextButton(
+              AppButton.plain(
                 onPressed: () => context.go('/monthly'),
                 child: const Text('去记录'),
               ),
@@ -585,6 +765,14 @@ class _BookPageState extends ConsumerState<BookPage> {
 
   List<Widget> monthly() => [
     card(period()),
+    if (book.members.isEmpty)
+      empty(
+        Icons.group_add_outlined,
+        '先添加家庭成员',
+        '添加成员后，即可按月记录收入与净存入。',
+        action: '添加成员',
+        onTap: () => editMember(null),
+      ),
     for (final member in book.members.where(
       (m) => m.data['active'] == true || book.monthly(m.id, month) != null,
     ))
@@ -611,7 +799,7 @@ class _BookPageState extends ConsumerState<BookPage> {
                         ),
                       ),
                     ),
-                    IconButton(
+                    AppIconButton(
                       tooltip: '编辑月度记录',
                       onPressed: () => editMonth(member, record),
                       icon: const Icon(Icons.edit_outlined),
@@ -689,7 +877,7 @@ class _BookPageState extends ConsumerState<BookPage> {
                     ),
                 ] else ...[
                   const SizedBox(height: 16),
-                  OutlinedButton.icon(
+                  AppButton.icon(
                     onPressed: () => editMonth(member, null),
                     icon: const Icon(Icons.add),
                     label: const Text('填写这个月'),
@@ -722,7 +910,8 @@ class _BookPageState extends ConsumerState<BookPage> {
     ]),
     section(
       '钱在哪里',
-      trailing: FilledButton.icon(
+      trailing: AppButton.icon(
+        primary: true,
         onPressed: () => editAccount(null),
         icon: const Icon(Icons.add, size: 18),
         label: const Text('添加账户'),
@@ -778,7 +967,7 @@ class _BookPageState extends ConsumerState<BookPage> {
                   ],
                 ),
               ),
-              IconButton(
+              AppIconButton(
                 tooltip: '编辑账户',
                 onPressed: () => editAccount(account),
                 icon: const Icon(Icons.more_horiz),
@@ -803,12 +992,13 @@ class _BookPageState extends ConsumerState<BookPage> {
             spacing: 8,
             children: [
               if (!archived)
-                FilledButton.tonalIcon(
+                AppButton.icon(
                   onPressed: () => editBalance(account),
                   icon: const Icon(Icons.fact_check_outlined, size: 18),
                   label: const Text('核对余额'),
                 ),
-              TextButton.icon(
+              AppButton.icon(
+                plain: true,
                 onPressed: () => balanceHistory(account),
                 icon: const Icon(Icons.history, size: 18),
                 label: const Text('核对历史'),
@@ -909,8 +1099,8 @@ class _BookPageState extends ConsumerState<BookPage> {
         spacing: 10,
         runSpacing: 10,
         children: [
-          for (final ext in ['xlsx', 'csv', 'docx', 'pdf'])
-            OutlinedButton.icon(
+          for (final ext in ['xlsx', 'csv', 'docx'])
+            AppButton.icon(
               onPressed: () => exportReport(ext),
               icon: const Icon(Icons.file_download_outlined),
               label: Text(ext.toUpperCase()),
@@ -1122,26 +1312,46 @@ class _BookPageState extends ConsumerState<BookPage> {
     );
   }
 
+  Widget themeChoices() {
+    const choices = [
+      ('system', Icons.brightness_auto_outlined, '跟随系统'),
+      ('light', Icons.light_mode_outlined, '浅色'),
+      ('dark', Icons.dark_mode_outlined, '深色'),
+    ];
+    final selectedTheme = math.max(
+      0,
+      choices.indexWhere((choice) => choice.$1 == book.settings['theme']),
+    );
+    return glass.GlassSegmentedControl(
+      selectedTextStyle: Theme.of(context).textTheme.labelMedium,
+      unselectedTextStyle: Theme.of(context).textTheme.labelMedium,
+      height: 64,
+      borderRadius: 18,
+      selectedIndex: selectedTheme,
+      activeSelectedColor: Theme.of(context).colorScheme.primary,
+      segments: [
+        for (final choice in choices)
+          glass.GlassSegment(
+            icon: Icon(choice.$2, size: 20),
+            label: choice.$3,
+            semanticLabel: '主题：${choice.$3}',
+          ),
+      ],
+      onSegmentSelected: (index) => guard(() async {
+        await store.settings({'theme': choices[index].$1});
+        if (mounted) setState(() {});
+      }),
+    );
+  }
+
   List<Widget> settings() => [
     section('显示与个性'),
     card(
       Column(
         children: [
-          DropdownButtonFormField<String>(
-            initialValue:
-                ['system', 'light', 'dark'].contains(book.settings['theme'])
-                ? book.settings['theme']
-                : 'system',
-            decoration: const InputDecoration(labelText: '主题'),
-            items: const [
-              DropdownMenuItem(value: 'system', child: Text('跟随系统')),
-              DropdownMenuItem(value: 'light', child: Text('浅色')),
-              DropdownMenuItem(value: 'dark', child: Text('深色')),
-            ],
-            onChanged: (v) => guard(() => store.settings({'theme': v})),
-          ),
+          themeChoices(),
           const SizedBox(height: 14),
-          ListTile(
+          AppListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.devices_outlined),
             title: const Text('这台设备的名称'),
@@ -1154,7 +1364,7 @@ class _BookPageState extends ConsumerState<BookPage> {
     ),
     section(
       '家庭成员',
-      trailing: IconButton(
+      trailing: AppIconButton(
         tooltip: '添加成员',
         onPressed: () => editMember(null),
         icon: const Icon(Icons.person_add_alt_1_outlined),
@@ -1163,8 +1373,13 @@ class _BookPageState extends ConsumerState<BookPage> {
     card(
       Column(
         children: [
+          if (book.members.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('尚未添加家庭成员，点击右上角添加。'),
+            ),
           for (final m in book.members)
-            ListTile(
+            AppListTile(
               contentPadding: EdgeInsets.zero,
               leading: CircleAvatar(child: Text(m.label.substring(0, 1))),
               title: Text(m.label),
@@ -1179,7 +1394,7 @@ class _BookPageState extends ConsumerState<BookPage> {
     card(
       Column(
         children: [
-          ListTile(
+          AppListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.ios_share_outlined),
             title: const Text('导出完整数据包'),
@@ -1193,7 +1408,7 @@ class _BookPageState extends ConsumerState<BookPage> {
             ),
           ),
           const Divider(),
-          ListTile(
+          AppListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.file_open_outlined),
             title: const Text('导入数据或表格'),
@@ -1201,7 +1416,7 @@ class _BookPageState extends ConsumerState<BookPage> {
             onTap: importFile,
           ),
           const Divider(),
-          ListTile(
+          AppListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.restore_rounded),
             title: const Text('本机恢复备份'),
@@ -1220,31 +1435,37 @@ class _BookPageState extends ConsumerState<BookPage> {
             children: [
               Icon(Icons.spa_outlined),
               SizedBox(width: 10),
-              Text(
-                '家有余 · HomeReserve',
-                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
+              Expanded(
+                child: Text(
+                  '家有余 · HomeReserve',
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          const Text(
-            '给 min 制作，和 he 一起，\n把日子过好，把幸福慢慢攒下。',
-            style: TextStyle(height: 1.8),
+          Text(
+            showDedication
+                ? '愿你眼里有光，身边有爱。\n一起把日子过好，把幸福慢慢攒下。'
+                : '简单记录家庭收入、储蓄与资产，\n让每一份积累都有迹可循。',
+            style: const TextStyle(height: 1.8),
           ),
           const SizedBox(height: 14),
-          muted('版本 1.1.1 · 本地离线 · 人民币\n数据保存在本机，不会上传财务数据。请定期导出备份。'),
+          muted('版本 1.2.0 · 本地离线 · 人民币\n数据保存在本机，不会上传财务数据。请定期导出备份。'),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             children: [
-              TextButton.icon(
+              AppButton.icon(
+                plain: true,
                 onPressed: () => openUrl(
                   'https://github.com/Smileher/HomeReserve/releases/latest',
                 ),
                 icon: const Icon(Icons.system_update_outlined),
                 label: const Text('查看最新版本'),
               ),
-              TextButton.icon(
+              AppButton.icon(
+                plain: true,
                 onPressed: () =>
                     openUrl('https://github.com/Smileher/HomeReserve'),
                 icon: const Icon(Icons.code_rounded),
@@ -1293,11 +1514,9 @@ class _BookPageState extends ConsumerState<BookPage> {
     final bytes = switch (ext) {
       'xlsx' => data.xlsx(),
       'docx' => data.docx(),
-      'pdf' => await data.pdf(),
       _ => utf8.encode(data.csv()),
     };
     await saveFile('家有余-${selected.year}.$ext', bytes, switch (ext) {
-      'pdf' => 'application/pdf',
       'xlsx' =>
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -1311,15 +1530,15 @@ class _BookPageState extends ConsumerState<BookPage> {
   }) async =>
       await showDialog<bool>(
         context: context,
-        builder: (c) => AlertDialog(
+        builder: (c) => AppDialog(
           title: Text(title),
           content: Text(description),
           actions: [
-            TextButton(
+            AppButton.plain(
               onPressed: () => Navigator.pop(c, false),
               child: const Text('取消'),
             ),
-            FilledButton(
+            AppButton.primary(
               onPressed: () => Navigator.pop(c, true),
               child: Text(button),
             ),
@@ -1339,7 +1558,7 @@ class _BookPageState extends ConsumerState<BookPage> {
       context: context,
       barrierDismissible: false,
       builder: (dialog) => StatefulBuilder(
-        builder: (c, update) => AlertDialog(
+        builder: (c, update) => AppDialog(
           title: Text(title),
           content: SizedBox(
             width: 490,
@@ -1363,11 +1582,11 @@ class _BookPageState extends ConsumerState<BookPage> {
           ),
           actions: [
             ?extra,
-            TextButton(
+            AppButton.plain(
               onPressed: saving ? null : () => Navigator.pop(c),
               child: const Text('取消'),
             ),
-            FilledButton(
+            AppButton.primary(
               onPressed: saving
                   ? null
                   : () async {
@@ -1404,25 +1623,34 @@ class _BookPageState extends ConsumerState<BookPage> {
     int lines = 1,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 14),
-    child: TextField(
-      controller: controller,
-      decoration: InputDecoration(labelText: label),
-      maxLines: lines,
-      maxLength: money
-          ? 16
-          : lines > 1
-          ? 2000
-          : 60,
-      keyboardType: money
-          ? TextInputType.numberWithOptions(decimal: true, signed: signed)
-          : null,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.labelMedium),
+        const SizedBox(height: 8),
+        glass.GlassTextField(
+          textStyle: Theme.of(context).textTheme.bodyLarge,
+          key: ValueKey(label),
+          controller: controller,
+          surfaceStyle: glass.GlassSurfaceStyle.solid,
+          maxLines: lines,
+          maxLength: money
+              ? 16
+              : lines > 1
+              ? 2000
+              : 60,
+          keyboardType: money
+              ? TextInputType.numberWithOptions(decimal: true, signed: signed)
+              : null,
+        ),
+      ],
     ),
   );
   Future<void> editDevice() async {
     final name = TextEditingController(
       text: book.settings['device'] as String? ?? '',
     );
-    await form('设备名称', (_) => [field(name, '例如：min 的手机')], () async {
+    await form('设备名称', (_) => [field(name, '例如：我的手机、家用电脑')], () async {
       if (name.text.trim().isEmpty) throw const FormatException('请填写设备名称');
       await store.settings({'device': name.text.trim()});
     });
@@ -1436,7 +1664,7 @@ class _BookPageState extends ConsumerState<BookPage> {
       member == null ? '添加成员' : '编辑成员',
       (update) => [
         field(name, '称呼（最多 40 字）'),
-        SwitchListTile(
+        AppSwitchTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('使用中'),
           subtitle: const Text('停用后保留已有记录'),
@@ -1482,30 +1710,27 @@ class _BookPageState extends ConsumerState<BookPage> {
     await form(
       account == null ? '添加账户' : '编辑账户',
       (update) => [
-        field(name, '账户名称，例如：min 的支付宝'),
-        DropdownButtonFormField<String>(
-          initialValue: owner,
-          decoration: const InputDecoration(labelText: '归属'),
-          items: [
-            const DropdownMenuItem(value: sharedOwner, child: Text('家庭共同')),
-            for (final m in book.members)
-              DropdownMenuItem(value: m.id, child: Text(m.label)),
-          ],
-          onChanged: (v) => owner = v!,
+        field(name, '账户名称，例如：工资卡、支付宝'),
+        AppChoice(
+          value: owner,
+          label: '归属',
+          options: {
+            sharedOwner: '家庭共同',
+            for (final m in book.members) m.id: m.label,
+          },
+          onChanged: (v) => update(() => owner = v!),
         ),
         const SizedBox(height: 14),
-        DropdownButtonFormField<String>(
-          initialValue: category,
-          decoration: const InputDecoration(labelText: '类别'),
-          items: categories
-              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-              .toList(),
-          onChanged: (v) => category = v!,
+        AppChoice(
+          value: category,
+          label: '类别',
+          options: {for (final item in categories) item: item},
+          onChanged: (v) => update(() => category = v!),
         ),
         const SizedBox(height: 14),
         field(note, '备注（不要填写完整银行卡号）', lines: 2),
         if (account != null)
-          SwitchListTile(
+          AppSwitchTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('归档账户'),
             subtitle: const Text('最新核对余额需为零，历史保留'),
@@ -1559,17 +1784,59 @@ class _BookPageState extends ConsumerState<BookPage> {
       (update) => [
         muted('填写此账户当前实际总价值，不会与月度净存入重复累计。'),
         const SizedBox(height: 14),
-        ListTile(
+        AppListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.event_outlined),
           title: Text(date),
           trailing: const Icon(Icons.edit_calendar_outlined),
           onTap: () async {
-            final picked = await showDatePicker(
+            var chosen = DateTime.parse(date);
+            final picked = await showDialog<DateTime>(
               context: context,
-              initialDate: DateTime.parse(date),
-              firstDate: DateTime(2000),
-              lastDate: DateTime.now(),
+              builder: (c) => AppDialog(
+                title: const Text('选择核对日期'),
+                content: SizedBox(
+                  width: 360,
+                  child: glass.GlassDatePicker(
+                    // The graphical calendar needs room for seven day columns.
+                    style: MediaQuery.sizeOf(c).width < 430
+                        ? glass.GlassDatePickerStyle.wheel
+                        : glass.GlassDatePickerStyle.graphical,
+                    initialDateTime: chosen,
+                    minimumDate: DateTime(2000),
+                    maximumDate: DateTime.now(),
+                    firstDayOfWeek: 1,
+                    monthNames: const [
+                      '1月',
+                      '2月',
+                      '3月',
+                      '4月',
+                      '5月',
+                      '6月',
+                      '7月',
+                      '8月',
+                      '9月',
+                      '10月',
+                      '11月',
+                      '12月',
+                    ],
+                    weekdayNames: const ['一', '二', '三', '四', '五', '六', '日'],
+                    surfaceStyle: glass.GlassSurfaceStyle.solid,
+                    tintColor: Theme.of(c).colorScheme.primary,
+                    onDateTimeChanged: (value) => chosen = value,
+                  ),
+                ),
+                actions: [
+                  AppButton.plain(
+                    onPressed: () => Navigator.pop(c),
+                    child: const Text('取消'),
+                  ),
+                  AppButton.primary(
+                    onPressed: () => Navigator.pop(c, chosen),
+                    child: const Text('确定'),
+                  ),
+                ],
+              ),
             );
             if (picked != null) update(() => date = dayKey(picked));
           },
@@ -1623,7 +1890,7 @@ class _BookPageState extends ConsumerState<BookPage> {
           );
     await showDialog<void>(
       context: context,
-      builder: (c) => AlertDialog(
+      builder: (c) => AppDialog(
         title: Text('${account.label} · 核对历史'),
         content: SizedBox(
           width: 480,
@@ -1633,7 +1900,7 @@ class _BookPageState extends ConsumerState<BookPage> {
                   shrinkWrap: true,
                   children: [
                     for (final b in list)
-                      ListTile(
+                      AppListTile(
                         title: Text(
                           '${b.data['date']}   ${money(b.data['amount'])}',
                         ),
@@ -1650,7 +1917,7 @@ class _BookPageState extends ConsumerState<BookPage> {
                 ),
         ),
         actions: [
-          TextButton(
+          AppButton.plain(
             onPressed: () => Navigator.pop(c),
             child: const Text('关闭'),
           ),
@@ -1771,7 +2038,7 @@ class _BookPageState extends ConsumerState<BookPage> {
       },
       extra: original == null
           ? null
-          : TextButton(
+          : AppButton.plain(
               onPressed: () async {
                 if (await confirm(
                   '删除这条月度记录？',
@@ -1828,7 +2095,7 @@ class _BookPageState extends ConsumerState<BookPage> {
     if (!mounted) return;
     final selected = await showDialog<File>(
       context: context,
-      builder: (c) => AlertDialog(
+      builder: (c) => AppDialog(
         title: const Text('本机恢复备份'),
         content: SizedBox(
           width: 500,
@@ -1838,7 +2105,7 @@ class _BookPageState extends ConsumerState<BookPage> {
                   shrinkWrap: true,
                   children: [
                     for (final file in files)
-                      ListTile(
+                      AppListTile(
                         leading: const Icon(Icons.restore),
                         title: Text(
                           file.uri.pathSegments.last
@@ -1851,7 +2118,7 @@ class _BookPageState extends ConsumerState<BookPage> {
                 ),
         ),
         actions: [
-          TextButton(
+          AppButton.plain(
             onPressed: () => Navigator.pop(c),
             child: const Text('取消'),
           ),
@@ -1951,7 +2218,7 @@ class _ImportDialogState extends State<ImportDialog> {
         .toString()
         .split('.')
         .first;
-    return AlertDialog(
+    return AppDialog(
       title: const Text('导入前，先确认一下'),
       content: SizedBox(
         width: 700,
@@ -1968,22 +2235,14 @@ class _ImportDialogState extends State<ImportDialog> {
               for (final e in plan.ambiguous)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 14),
-                  child: DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText:
-                          '同名${e.kind == 'member' ? '成员' : '账户'}：${e.label}',
-                    ),
-                    items: [
-                      DropdownMenuItem(
-                        value: e.id,
-                        child: const Text('作为不同对象新增'),
-                      ),
+                  child: AppChoice(
+                    value: plan.mapping[e.id],
+                    label: '同名${e.kind == 'member' ? '成员' : '账户'}：${e.label}',
+                    options: {
+                      e.id: '作为不同对象新增',
                       for (final target in plan.local.of(e.kind))
-                        DropdownMenuItem(
-                          value: target.id,
-                          child: Text('对应本机：${target.label}'),
-                        ),
-                    ],
+                        target.id: '对应本机：${target.label}',
+                    },
                     onChanged: (v) => setState(() {
                       plan.mapping[e.id] = v!;
                       prepare();
@@ -1998,7 +2257,8 @@ class _ImportDialogState extends State<ImportDialog> {
                 const SizedBox(height: 10),
                 const Text('默认保留本机。修改时间较晚也不会自动覆盖。'),
                 for (final conflict in plan.conflicts)
-                  Card(
+                  glass.GlassContainer.card(
+                    surfaceStyle: glass.GlassSurfaceStyle.solid,
                     child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: Column(
@@ -2016,7 +2276,7 @@ class _ImportDialogState extends State<ImportDialog> {
                             '本机：\n${conflict.local == null ? '已删除' : describe(conflict.local!)}\n\n导入：\n${describe(conflict.incoming)}',
                             style: const TextStyle(fontSize: 12, height: 1.7),
                           ),
-                          SwitchListTile(
+                          AppSwitchTile(
                             contentPadding: EdgeInsets.zero,
                             title: const Text('使用导入内容'),
                             value: conflict.useIncoming,
@@ -2029,14 +2289,14 @@ class _ImportDialogState extends State<ImportDialog> {
                   ),
               ],
               const Divider(),
-              SwitchListTile(
+              AppSwitchTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('同时应用导入的主题设置'),
                 subtitle: const Text('不会覆盖这台设备的名称'),
                 value: plan.applySettings,
                 onChanged: (v) => setState(() => plan.applySettings = v),
               ),
-              SwitchListTile(
+              AppSwitchTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('完整恢复：替换本机全部数据'),
                 subtitle: Text(
@@ -2065,26 +2325,26 @@ class _ImportDialogState extends State<ImportDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        AppButton.plain(
           onPressed: saving ? null : () => Navigator.pop(context),
           child: const Text('取消'),
         ),
-        FilledButton(
+        AppButton.primary(
           onPressed: saving || (!prepared && !plan.restore)
               ? null
               : () async {
                   if (plan.restore) {
                     final accepted = await showDialog<bool>(
                       context: context,
-                      builder: (c) => AlertDialog(
+                      builder: (c) => AppDialog(
                         title: const Text('确认完整替换？'),
                         content: const Text('当前全部业务数据将替换为这份数据包。替换前会自动备份本机数据。'),
                         actions: [
-                          TextButton(
+                          AppButton.plain(
                             onPressed: () => Navigator.pop(c, false),
                             child: const Text('返回'),
                           ),
-                          FilledButton(
+                          AppButton.primary(
                             onPressed: () => Navigator.pop(c, true),
                             child: const Text('确认替换'),
                           ),

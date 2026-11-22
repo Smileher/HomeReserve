@@ -1,10 +1,8 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:excel/excel.dart';
-import 'package:flutter/services.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 
 import 'domain.dart';
 import 'transfer.dart';
@@ -145,110 +143,6 @@ class ReportData {
       zip.addFile(ArchiveFile(file.key, bytes.length, bytes));
     }
     return Uint8List.fromList(ZipEncoder().encode(zip)!);
-  }
-
-  Future<Uint8List> pdf() async {
-    final regular = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/NotoSansSC-Regular.ttf'),
-    );
-    final doc = pw.Document(
-      theme: pw.ThemeData.withFont(base: regular, bold: regular),
-    );
-    doc.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
-        header: (c) => pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 16),
-          child: pw.Text(
-            '家有余 · $year 年家庭报告',
-            style: pw.TextStyle(
-              fontSize: 20,
-              color: PdfColor.fromInt(0xff526b91),
-            ),
-          ),
-        ),
-        footer: (c) => pw.Align(
-          alignment: pw.Alignment.centerRight,
-          child: pw.Text(
-            '${c.pageNumber} / ${c.pagesCount}',
-            style: const pw.TextStyle(fontSize: 9),
-          ),
-        ),
-        build: (c) => [
-          pw.Text(generated, style: const pw.TextStyle(fontSize: 9)),
-          pw.SizedBox(height: 16),
-          pw.Text('收入 ${money(income)}    净存入 ${money(saving)}'),
-          pw.SizedBox(height: 8),
-          pw.Text(completeness, style: const pw.TextStyle(fontSize: 10)),
-          pw.SizedBox(height: 16),
-          pw.SizedBox(
-            height: 160,
-            child: pw.Chart(
-              grid: pw.CartesianGrid(
-                xAxis: pw.FixedAxis(
-                  [for (var i = 1; i <= 12; i++) i.toDouble()],
-                  format: (v) => '${v.toInt()}月',
-                  textStyle: const pw.TextStyle(fontSize: 7),
-                ),
-                yAxis: pw.FixedAxis(
-                  _chartTicks(),
-                  textStyle: const pw.TextStyle(fontSize: 7),
-                ),
-              ),
-              datasets: [
-                pw.LineDataSet(
-                  color: PdfColor.fromInt(0xffb18c54),
-                  data: [
-                    for (var i = 1; i <= 12; i++)
-                      pw.PointChartValue(
-                        i.toDouble(),
-                        MonthSummary(
-                              book,
-                              '$year-${i.toString().padLeft(2, '0')}',
-                            ).saving /
-                            100,
-                      ),
-                  ],
-                ),
-              ],
-              overlay: null,
-            ),
-          ),
-          pw.SizedBox(height: 20),
-          pw.TableHelper.fromTextArray(
-            headers: rows.first,
-            data: rows.skip(1).toList(),
-            headerStyle: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              fontSize: 10,
-            ),
-            cellStyle: const pw.TextStyle(fontSize: 9),
-            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-            cellPadding: const pw.EdgeInsets.all(5),
-          ),
-          pw.SizedBox(height: 16),
-          pw.Text(
-            '累计净存入不等于当前资产。资产变化不代表投资收益。',
-            style: const pw.TextStyle(fontSize: 9),
-          ),
-        ],
-      ),
-    );
-    return doc.save();
-  }
-
-  List<double> _chartTicks() {
-    final values = [
-      0.0,
-      for (var i = 1; i <= 12; i++)
-        MonthSummary(book, '$year-${i.toString().padLeft(2, '0')}').saving /
-            100,
-    ];
-    values.sort();
-    final low = values.first;
-    final high = values.last == low ? low + 100 : values.last;
-    return [for (var i = 0; i < 5; i++) low + (high - low) * i / 4];
   }
 }
 

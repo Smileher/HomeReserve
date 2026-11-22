@@ -12,6 +12,15 @@ import 'domain_test.dart' as fixture;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('初始化保留已经保存的成员、记录和设备设置', () async {
+    final store = AppStore(memoryOnly: true);
+    store.book = fixture.sample();
+    store.book.settings['initialized'] = true;
+    final before = canonical(store.book.toJson());
+    await store.initialize();
+    expect(canonical(store.book.toJson()), before);
+    store.dispose();
+  });
   test('SQLite 持久化完整恢复数据及整数金额', () async {
     final db = LocalDatabase(NativeDatabase.memory());
     final book = fixture.sample();
@@ -33,11 +42,6 @@ void main() {
     expect(imported.book.months.single.data['note'], '生活 & 储蓄');
     final archive = ZipDecoder().decodeBytes(report.docx());
     expect(archive.files.any((f) => f.name == 'word/document.xml'), true);
-  });
-  test('PDF 使用打包中文字体生成完整文件', () async {
-    final bytes = await ReportData(fixture.sample(), 2026).pdf();
-    expect(ascii.decode(bytes.take(5).toList()), '%PDF-');
-    expect(bytes.length, greaterThan(1000));
   });
   test('CSV 文本不会成为公式，同时保留负净存入', () {
     final book = fixture.sample();

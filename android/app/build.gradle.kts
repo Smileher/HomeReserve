@@ -10,6 +10,13 @@ android {
     compileSdkMinor = 2
     ndkVersion = flutter.ndkVersion
 
+    packaging {
+        jniLibs {
+            // Direct APK downloads are smaller; Android extracts these at install time.
+            useLegacyPackaging = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

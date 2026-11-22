@@ -6,9 +6,9 @@ import 'package:home_reserve/transfer.dart';
 
 Book sample() {
   final member = Entry(
-    id: 'min',
+    id: 'member-a',
     kind: 'member',
-    data: {'name': 'min', 'active': true, 'order': 0},
+    data: {'name': '成员甲', 'active': true, 'order': 0},
   );
   final account = Entry(
     id: 'bank',
@@ -25,7 +25,7 @@ Book sample() {
     id: 'month',
     kind: 'month',
     data: {
-      'member': 'min',
+      'member': 'member-a',
       'month': '2026-10',
       'income': 1000000,
       'saving': 300000,
@@ -46,7 +46,7 @@ Book sample() {
     entries: {
       for (final e in [member, account, month, balance]) e.id: e,
     },
-    settings: {'theme': 'dark', 'device': 'min 的手机'},
+    settings: {'theme': 'dark', 'device': '测试手机'},
   );
 }
 
@@ -125,7 +125,7 @@ void main() {
       id: 'deleted-month',
       kind: 'tombstone',
       data: {
-        'key': 'month:min:2026-10',
+        'key': 'month:member-a:2026-10',
         'deletedKind': 'month',
         'originalId': 'month',
       },
@@ -140,19 +140,19 @@ void main() {
     final source = sample();
     final local = Book(
       entries: {
-        'local-min': Entry(
-          id: 'local-min',
+        'local-member-a': Entry(
+          id: 'local-member-a',
           kind: 'member',
-          data: {'name': 'min', 'active': true, 'order': 0},
+          data: {'name': '成员甲', 'active': true, 'order': 0},
         ),
       },
     );
     final plan = ImportPlan(local, DataPackage.create(source));
     expect(() => plan.prepare(), throwsFormatException);
-    plan.mapping['min'] = 'local-min';
+    plan.mapping['member-a'] = 'local-member-a';
     plan.prepare();
     final result = plan.result();
-    expect(result.months.single.data['member'], 'local-min');
+    expect(result.months.single.data['member'], 'local-member-a');
     expect(result.members.length, 1);
   });
   test('跨月重复、无效关联和分配超额不能写入', () {
@@ -173,11 +173,11 @@ void main() {
   });
   test('完整恢复不覆盖设备名称', () {
     final local = sample();
-    local.settings['device'] = 'he 的电脑';
+    local.settings['device'] = '测试电脑';
     final plan = ImportPlan(local, DataPackage.create(sample()))
       ..restore = true;
     final result = plan.result();
-    expect(result.settings['device'], 'he 的电脑');
+    expect(result.settings['device'], '测试电脑');
     expect(result.settings['theme'], 'dark');
   });
 }

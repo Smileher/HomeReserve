@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install pillow fonttools
+      - run: pip install pillow
       - run: python tool/bootstrap.py
       - run: flutter pub get
       - run: dart format lib test integration_test
@@ -106,6 +106,9 @@ jobs:
           import zipfile
           with zipfile.ZipFile('build/app/outputs/flutter-apk/app-release.apk') as apk:
               abis = {name.split('/')[1] for name in apk.namelist() if name.startswith('lib/')}
+              native = [entry for entry in apk.infolist() if entry.filename.endswith('.so')]
+              assert native and all(entry.compress_type == zipfile.ZIP_DEFLATED for entry in native), 'Native libraries must be compressed'
+              assert not any('NotoSansSC' in name for name in apk.namelist()), 'Removed report font must not be packaged'
           assert abis == {'arm64-v8a'}, f'Unexpected native architectures: {abis}'
           print('Native architecture verified: arm64-v8a')
           PY

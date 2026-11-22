@@ -11,4 +11,4 @@ PRODUCT_NAME = HomeReserve
 PRODUCT_BUNDLE_IDENTIFIER = dev.smileher.homereserve
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 he. MIT License.
+PRODUCT_COPYRIGHT = Copyright © 2026 HomeReserve contributors. MIT License.

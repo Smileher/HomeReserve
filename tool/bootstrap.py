@@ -3,7 +3,6 @@ from pathlib import Path
 import os
 import re
 import subprocess
-import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 os.chdir(ROOT)
@@ -31,7 +30,7 @@ config = ROOT / "macos/Runner/Configs/AppInfo.xcconfig"
 text = config.read_text(encoding="utf-8")
 text = re.sub(r"PRODUCT_NAME = .*", "PRODUCT_NAME = HomeReserve", text)
 text = re.sub(r"PRODUCT_BUNDLE_IDENTIFIER = .*", "PRODUCT_BUNDLE_IDENTIFIER = dev.smileher.homereserve", text)
-text = re.sub(r"PRODUCT_COPYRIGHT = .*", "PRODUCT_COPYRIGHT = Copyright © 2026 he. MIT License.", text)
+text = re.sub(r"PRODUCT_COPYRIGHT = .*", "PRODUCT_COPYRIGHT = Copyright © 2026 HomeReserve contributors. MIT License.", text)
 config.write_text(text, encoding="utf-8")
 for filename in ["DebugProfile.entitlements", "Release.entitlements"]:
     target = ROOT / "macos/Runner" / filename
@@ -44,20 +43,6 @@ project.write_text(re.sub(r"MACOSX_DEPLOYMENT_TARGET = [^;]+;", "MACOSX_DEPLOYME
 podfile = ROOT / "macos/Podfile"
 if podfile.exists():
     podfile.write_text(re.sub(r"platform :osx, '[^']+'", "platform :osx, '26.0'", podfile.read_text(encoding="utf-8")), encoding="utf-8")
-
-# Use freely redistributable Noto; instantiate a static font for PDF compatibility.
-fonts = ROOT / "assets/fonts"
-fonts.mkdir(parents=True, exist_ok=True)
-font_path = fonts / "NotoSansSC-Regular.ttf"
-if not font_path.exists():
-    variable = fonts / "NotoSansSC-variable.ttf"
-    urllib.request.urlretrieve("https://raw.githubusercontent.com/google/fonts/main/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf", variable)
-    from fontTools.ttLib import TTFont
-    from fontTools.varLib.instancer import instantiateVariableFont
-    font = instantiateVariableFont(TTFont(variable), {"wght": 400}, inplace=True)
-    font.save(font_path)
-    variable.unlink()
-    urllib.request.urlretrieve("https://raw.githubusercontent.com/google/fonts/main/ofl/notosanssc/OFL.txt", fonts / "OFL.txt")
 
 from PIL import Image, ImageDraw
 def icon(size):
@@ -79,4 +64,4 @@ for size in [16,32,64,128,256,512,1024]:
 icon(256).save(ROOT / "windows/runner/resources/app_icon.ico", sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])
 runner=ROOT / "windows/runner/main.cpp"
 runner.write_text(runner.read_text(encoding="utf-8").replace('L"home_reserve"', 'L"HomeReserve"'), encoding="utf-8")
-print("Native runners, signing configuration, icons and report font prepared.")
+print("Native runners, signing configuration and icons prepared.")

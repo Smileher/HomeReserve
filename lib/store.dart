@@ -85,19 +85,10 @@ class AppStore extends ChangeNotifier {
       }
       if (book.settings['initialized'] != true) {
         final next = book.copy();
-        for (var i = 0; i < 2; i++) {
-          final name = i == 0 ? 'he' : 'min';
-          final e = Entry(
-            id: 'member-$name',
-            kind: 'member',
-            data: {'name': name, 'active': true, 'order': i},
-          );
-          next.entries[e.id] = e;
-        }
         next.settings.addAll({
           'initialized': true,
           'theme': 'system',
-          'device': Platform.localHostname,
+          'device': '本机设备',
           'deviceId': newId(),
         });
         await db?.save(book, next);
