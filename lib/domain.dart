@@ -87,6 +87,10 @@ class Book {
     return book;
   }
   void validate() {
+    for (final key in ['theme','device','deviceId']) {
+      if (settings[key] != null && settings[key] is! String) throw FormatException('设置 $key 无效');
+    }
+    if (settings['theme'] != null && !['system','light','dark'].contains(settings['theme'])) throw const FormatException('主题设置无效');
     final keys = <String>{};
     void requiredText(Entry e, String key, [int max = 2000]) {
       final v = e.data[key];

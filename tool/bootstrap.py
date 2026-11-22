@@ -7,7 +7,7 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 os.chdir(ROOT)
-subprocess.run(["flutter", "create", "--platforms=android,windows,macos", "--org=dev.smileher", "--project-name=home_reserve", "."], check=True)
+subprocess.run(["flutter", "create", "--no-pub", "--platforms=android,windows,macos", "--org=dev.smileher", "--project-name=home_reserve", "."], check=True)
 
 manifest = ROOT / "android/app/src/main/AndroidManifest.xml"
 text = manifest.read_text(encoding="utf-8").replace('android:label="home_reserve"', 'android:label="家有余" android:allowBackup="false"')
