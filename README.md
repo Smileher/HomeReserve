@@ -6,8 +6,9 @@
 - 管理银行卡、支付账户、存款和理财，保存余额核对历史。
 - 查看趋势、成员汇总、资产分布、同比环比和记录完整度。
 - 跨设备导入导出数据包，预览来源、时间、数量及冲突，写入前自动备份。
-- 支持 Excel、CSV、Word、PDF 导出，以及标准月度表格导入。
-- 自适应布局，支持浅色、深色及跟随系统主题。
+- 支持 Excel、CSV、Word 导出，以及标准月度表格导入。
+- 液态玻璃界面，手机与桌面自适应，支持浅色、深色及跟随系统主题。
+- 空账本开始，自定义家庭成员，点击年月即可选择记录月份或分析年份。
 
 ## 下载
 
@@ -29,8 +30,8 @@ Windows 首版无付费代码签名；macOS 使用本地签名、未做 Apple �
 
 ## 开发
 
-Flutter 3.50.1 stable、Riverpod、Drift/SQLite。Android 编译 SDK 37.2、目标 API 37、最低 API 36，发布包仅包含 ARM64。Windows 使用 Visual Studio 2026，macOS 使用 macOS 26 构建环境。安装 Python 的 pillow、fonttools 后，运行 `python tool/bootstrap.py`、`flutter pub get`、`flutter analyze`、`flutter test`。
+Flutter 3.50.1 stable、Riverpod、Drift/SQLite。Android 编译 SDK 37.2、目标 API 37、最低 API 36，发布包仅包含 ARM64。Windows 使用 Visual Studio 2026，macOS 使用 macOS 26 构建环境。安装 Python 的 pillow 后，运行 `python tool/bootstrap.py`、`flutter pub get`、`flutter analyze`、`flutter test`。
 
 GitHub Actions 构建三端，发布版本标签后生成安装包及 SHA-256 校验文件。Android 正式签名通过仓库 Secrets 配置，禁止提交密钥。
 
-MIT 许可证；随包中文字体使用 SIL Open Font License。
+MIT 许可证。
