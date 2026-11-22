@@ -60,8 +60,9 @@ if not font_path.exists():
 
 from PIL import Image, ImageDraw
 def icon(size):
-    image = Image.new("RGBA", (1024, 1024), (31, 111, 91, 255))
+    image = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
+    draw.rounded_rectangle((0, 0, 1023, 1023), radius=220, fill="#1f6f5b")
     draw.line([(205, 470), (512, 220), (819, 470)], fill="#f1f7eb", width=56, joint="curve")
     draw.rounded_rectangle((285, 432, 740, 805), radius=72, fill="#f1f7eb")
     draw.ellipse((415, 480, 610, 675), fill="#a1c7a4")

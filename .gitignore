@@ -1,6 +1,8 @@
 .dart_tool/
 __pycache__/
 *.pyc
+*.iml
+.idea/
 .flutter-plugins*
 .packages
 .pub-cache/

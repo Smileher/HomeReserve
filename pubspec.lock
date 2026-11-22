@@ -272,14 +272,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_lucide:
-    dependency: "direct main"
-    description:
-      name: flutter_lucide
-      sha256: "12f54954e923f4e56a7d1dabfbfdbc07e55dad0eb8fe79c08461e7ba250fed88"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.77.0"
   flutter_riverpod:
     dependency: "direct main"
     description:
@@ -453,7 +445,7 @@ packages:
     source: hosted
     version: "0.13.0"
   material_ui:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: material_ui
       sha256: a6b19012df437a356cbc01f8ea22a105e07194c47c9a6009da0032a0ce35c4ab
