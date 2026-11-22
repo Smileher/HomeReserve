@@ -179,6 +179,20 @@ Win32Window::MessageHandler(HWND hwnd,
                             WPARAM const wparam,
                             LPARAM const lparam) noexcept {
   switch (message) {
+    case WM_GETMINMAXINFO: {
+      // Keep a 960 x 640 logical client area, including DPI-scaled window chrome.
+      const UINT dpi = GetDpiForWindow(hwnd);
+      RECT minimum = {0, 0, MulDiv(960, dpi, 96), MulDiv(640, dpi, 96)};
+      AdjustWindowRectExForDpi(
+          &minimum, static_cast<DWORD>(GetWindowLongPtr(hwnd, GWL_STYLE)),
+          GetMenu(hwnd) != nullptr,
+          static_cast<DWORD>(GetWindowLongPtr(hwnd, GWL_EXSTYLE)), dpi);
+      auto info = reinterpret_cast<MINMAXINFO*>(lparam);
+      info->ptMinTrackSize.x = minimum.right - minimum.left;
+      info->ptMinTrackSize.y = minimum.bottom - minimum.top;
+      return 0;
+    }
+
     case WM_DESTROY:
       window_handle_ = nullptr;
       Destroy();
