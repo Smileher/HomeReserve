@@ -7,6 +7,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: homereserve-${{ github.ref }}
+  cancel-in-progress: true
 env:
   FLUTTER_VERSION: '3.50.1'
 jobs:
