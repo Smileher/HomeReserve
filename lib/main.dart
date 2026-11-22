@@ -855,6 +855,8 @@ class _BookPageState extends ConsumerState<BookPage> {
       muted(report.completeness),
       section('收入与储蓄趋势'),
       chart(12),
+      section('资产在哪里'),
+      assetDistribution(),
       section('成员与账户分布'),
       for (final m in [
         ...book.members,
@@ -965,6 +967,24 @@ class _BookPageState extends ConsumerState<BookPage> {
         ],
       ),
     );
+  }
+
+  Widget assetDistribution() {
+    final values = book.accounts.map((a) => (a, book.latestBalance(a.id)?.data['amount'] as int? ?? 0)).where((a) => a.$2 > 0).toList();
+    final total = values.fold(0, (sum, value) => sum + value.$2);
+    const colors = [Color(0xff27836d), Color(0xff7d91ba), Color(0xffc5a16e), Color(0xff987eab), Color(0xff7f9c8d), Color(0xffbb8585)];
+    if (total == 0) return card(muted('核对账户余额后，这里会显示资产分布。'));
+    return card(Column(children: [
+      SizedBox(height: 190, child: PieChart(PieChartData(centerSpaceRadius: 48, sectionsSpace: 4, sections: [
+        for (var i = 0; i < values.length; i++) PieChartSectionData(value: values[i].$2.toDouble(), color: colors[i % colors.length], radius: 35, showTitle: false),
+      ]))),
+      const SizedBox(height: 16),
+      for (var i = 0; i < values.length; i++) Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [
+        Icon(Icons.circle, size: 10, color: colors[i % colors.length]), const SizedBox(width: 10),
+        Expanded(child: Text(values[i].$1.label)), Text('${money(values[i].$2)}  ·  ${(values[i].$2 / total * 100).toStringAsFixed(1)}%'),
+      ])),
+      muted('使用各账户最近已记录余额，核对时点可能不同。'),
+    ]));
   }
 
   Widget chart(int count, {bool rolling = false}) {
@@ -1682,6 +1702,12 @@ class _BookPageState extends ConsumerState<BookPage> {
             },
           );
           next.entries[allocation.id] = allocation;
+        }
+        for (final removed in old.where((a) => !next.entries.containsKey(a.id))) {
+          final marker = Entry(id: 'deleted-${removed.id}', kind: 'tombstone', data: {
+            'key': book.businessKey(removed), 'deletedKind': removed.kind, 'originalId': removed.id, 'label': removed.label,
+          });
+          next.entries[marker.id] = marker;
         }
         await store.commit(next);
       },

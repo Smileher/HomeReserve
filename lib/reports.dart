@@ -46,12 +46,13 @@ class ReportData {
 
   String get generated =>
       '生成时间：${DateTime.now().toLocal().toString().split('.').first} · 人民币';
-  String csv() =>
-      '\uFEFF${rows.map((row) => row.map((v) {
-        // Neutralize spreadsheet formulas in user-controlled text fields.
-        final safe = RegExp(r'^[=+@\t\r]').hasMatch(v) || RegExp(r'^-[^\d]').hasMatch(v) ? "'$v" : v;
-        return '"${safe.replaceAll('"', '""')}"';
-      }).join(',')).join('\r\n')}';
+  String csv() => '\uFEFF${rows.map((row) => row.asMap().entries.map((cell) {
+    final value = cell.value;
+    final numeric = (cell.key == 2 || cell.key == 3) && RegExp(r'^-?\d+(\.\d{1,2})?$').hasMatch(value);
+    // User text must not become a formula; signed numeric money remains numeric.
+    final safe = !numeric && RegExp(r'^[\s]*[=+@-]|^[\t\r]').hasMatch(value) ? "'$value" : value;
+    return '"${safe.replaceAll('"', '""')}"';
+  }).join(',')).join('\r\n')}';
   Uint8List xlsx() {
     final excel = Excel.createExcel();
     final sheet = excel['月度记录'];

@@ -59,6 +59,9 @@ class DataPackage {
         data['offsetMinutes'] is! int) {
       throw const FormatException('导出信息不完整');
     }
+    if ((data['offsetMinutes'] as int).abs() > 840 || (data['device'] as String).length > 120) {
+      throw const FormatException('导出设备名称或时区无效');
+    }
     return DataPackage(
       book: Book.fromJson(Map<String, dynamic>.from(data['book'] as Map)),
       device: data['device'],

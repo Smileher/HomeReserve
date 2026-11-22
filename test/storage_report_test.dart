@@ -34,4 +34,11 @@ void main() {
     expect(ascii.decode(bytes.take(5).toList()), '%PDF-');
     expect(bytes.length, greaterThan(1000));
   });
+  test('CSV 文本不会成为公式，同时保留负净存入', () {
+    final book = fixture.sample();
+    book.entries['month'] = book.entries['month']!.change({'note': '-123+456', 'saving': -1203});
+    final csv = ReportData(book, 2026).csv();
+    expect(csv, contains("'-123+456"));
+    expect(csv, contains('"-12.03"'));
+  });
 }
