@@ -30,7 +30,7 @@ jobs:
       - run: flutter pub get
       - run: dart format lib test integration_test
       - run: dart fix --apply --code=curly_braces_in_flow_control_structures
-      - run: flutter analyze --no-fatal-infos
+      - run: flutter analyze
       - run: flutter test --coverage
       - uses: actions/upload-artifact@v4
         if: always()
@@ -67,8 +67,6 @@ jobs:
             platform: windows
           - os: macos-15
             platform: macos-arm64
-          - os: macos-15-intel
-            platform: macos-x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -110,16 +108,25 @@ jobs:
           flutter build windows --release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           New-Item -ItemType Directory dist | Out-Null
+          $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
+          $vs = & $vswhere -latest -products '*' -property installationPath
+          $crt = Get-ChildItem "$vs/VC/Redist/MSVC/*/x64/Microsoft.VC*.CRT" -Directory | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $crt) { throw 'Microsoft C++ runtime directory not found' }
+          Copy-Item "$($crt.FullName)/*.dll" build/windows/x64/runner/Release/
+          foreach ($dll in @('msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll')) {
+            if (-not (Test-Path "build/windows/x64/runner/Release/$dll")) { throw "Missing runtime: $dll" }
+          }
           Copy-Item README.md build/windows/x64/runner/Release/使用说明.md
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath dist/HomeReserve-windows-x64.zip
       - name: macOS 构建与打包
         if: startsWith(matrix.platform, 'macos')
         shell: bash
         run: |
+          flutter config --enable-macos-arm64-only
           flutter build macos --release
           mkdir -p dist dmg-root
           cp -R build/macos/Build/Products/Release/HomeReserve.app dmg-root/
-          codesign --force --deep --sign - dmg-root/HomeReserve.app
+          codesign --force --deep --preserve-metadata=entitlements --sign - dmg-root/HomeReserve.app
           codesign --verify --deep --strict dmg-root/HomeReserve.app
           ln -s /Applications dmg-root/Applications
           cp README.md dmg-root/使用说明.md
@@ -145,7 +152,7 @@ jobs:
       - run: |
           mkdir dist
           find artifacts -type f \( -name '*.apk' -o -name '*.zip' -o -name '*.dmg' \) -exec cp {} dist/ \;
-          test "$(find dist -type f | wc -l)" -eq 4
+          test "$(find dist -type f | wc -l)" -eq 3
           cd dist && sha256sum * > SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
         with:

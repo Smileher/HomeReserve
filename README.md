@@ -17,7 +17,7 @@
 | --- | --- |
 | Android 12+ | 下载并安装 APK |
 | Windows 10/11 x64 | 完整解压 ZIP，运行 home_reserve.exe |
-| macOS 13+ | 按 Apple Silicon 或 Intel 选择 DMG，拖入 Applications |
+| macOS 13+ Apple Silicon | 下载 DMG，拖入 Applications |
 
 Windows 首版无付费代码签名；macOS 使用本地签名、未做 Apple 公证，首次打开可能需要在系统中确认来源。
 

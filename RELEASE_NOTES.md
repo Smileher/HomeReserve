@@ -7,7 +7,8 @@
 - 导出 Excel、CSV、Word、PDF；支持标准月度表格导入。
 - 浅色、深色、跟随系统，手机和桌面自适应布局。
 
-Android 12 及以上下载 APK；Windows 完整解压 ZIP 后运行 EXE；macOS 按芯片选择 DMG。
+Android 12 及以上下载 APK；Windows 完整解压 ZIP 后运行 EXE；macOS 仅提供 Apple Silicon 版 DMG。
+Windows 包附带 Microsoft C++ 运行库，无需另行安装运行库。
 Windows 首版无付费签名，macOS 本地签名、未做 Apple 公证，首次打开可能需要系统来源确认。
 
 数据完全保存在本机，请定期导出 JSON 备份。累计净存入不等于当前资产；余额以各账户核对记录为准。
