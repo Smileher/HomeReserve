@@ -1,0 +1,137 @@
+name: 检查、三端构建与发布
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  FLUTTER_VERSION: '3.50.1'
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow fonttools
+      - run: python tool/bootstrap.py
+      - run: flutter pub get
+      - run: dart format lib test integration_test
+      - run: flutter analyze
+      - run: flutter test --coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prepared-source
+          path: |
+            android
+            windows
+            macos
+            assets
+            pubspec.lock
+          include-hidden-files: true
+          retention-days: 14
+  build:
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: android
+          - os: windows-2025
+            platform: windows
+          - os: macos-15
+            platform: macos-arm64
+          - os: macos-15-intel
+            platform: macos-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: prepared-source
+      - uses: actions/setup-java@v4
+        if: matrix.platform == 'android'
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: flutter pub get --enforce-lockfile
+      - name: Android 正式签名与构建
+        if: matrix.platform == 'android'
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: homereserve
+        run: |
+          test -n "$KEYSTORE_BASE64"
+          export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/homereserve.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+          chmod +x android/gradlew
+          flutter build apk --release
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/HomeReserve-android.apk
+      - name: Windows 构建
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          flutter build windows --release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory dist | Out-Null
+          Copy-Item README.md build/windows/x64/runner/Release/使用说明.md
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath dist/HomeReserve-windows-x64.zip
+      - name: macOS 构建与打包
+        if: startsWith(matrix.platform, 'macos')
+        shell: bash
+        run: |
+          flutter build macos --release
+          mkdir -p dist dmg-root
+          cp -R build/macos/Build/Products/Release/HomeReserve.app dmg-root/
+          codesign --force --deep --sign - dmg-root/HomeReserve.app
+          codesign --verify --deep --strict dmg-root/HomeReserve.app
+          ln -s /Applications dmg-root/Applications
+          cp README.md dmg-root/使用说明.md
+          hdiutil create -volname HomeReserve -srcfolder dmg-root -ov -format UDZO dist/HomeReserve-${{ matrix.platform }}.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '*'
+          path: artifacts
+      - run: |
+          mkdir dist
+          find artifacts -type f \( -name '*.apk' -o -name '*.zip' -o -name '*.dmg' \) -exec cp {} dist/ \;
+          test "$(find dist -type f | wc -l)" -eq 4
+          cd dist && sha256sum * > SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          body_path: RELEASE_NOTES.md
+          fail_on_unmatched_files: true
