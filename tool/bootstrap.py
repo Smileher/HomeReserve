@@ -39,7 +39,8 @@ for filename in ["DebugProfile.entitlements", "Release.entitlements"]:
 project = ROOT / "macos/Runner.xcodeproj/project.pbxproj"
 project.write_text(re.sub(r"MACOSX_DEPLOYMENT_TARGET = [^;]+;", "MACOSX_DEPLOYMENT_TARGET = 13.0;", project.read_text(encoding="utf-8")), encoding="utf-8")
 podfile = ROOT / "macos/Podfile"
-podfile.write_text(re.sub(r"platform :osx, '[^']+'", "platform :osx, '13.0'", podfile.read_text(encoding="utf-8")), encoding="utf-8")
+if podfile.exists():
+    podfile.write_text(re.sub(r"platform :osx, '[^']+'", "platform :osx, '13.0'", podfile.read_text(encoding="utf-8")), encoding="utf-8")
 
 # Use freely redistributable Noto; instantiate a static font for PDF compatibility.
 fonts = ROOT / "assets/fonts"

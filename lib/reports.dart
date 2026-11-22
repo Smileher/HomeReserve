@@ -34,13 +34,13 @@ class ReportData {
     final sheet=excel['月度记录']; excel.delete('Sheet1');
     sheet.appendRow(rows.first.map(TextCellValue.new).toList());
     for(final e in records) {
-      sheet.appendRow([TextCellValue(e.data['month']),TextCellValue(book.name(e.data['member'])),e.data['income']==null ? const TextCellValue('未填写') : DoubleCellValue((e.data['income'] as int)/100),e.data['saving']==null ? const TextCellValue('未填写') : DoubleCellValue((e.data['saving'] as int)/100),TextCellValue(e.data['note'])]);
+      sheet.appendRow([TextCellValue(e.data['month']),TextCellValue(book.name(e.data['member'])),e.data['income']==null ? TextCellValue('未填写') : DoubleCellValue((e.data['income'] as int)/100),e.data['saving']==null ? TextCellValue('未填写') : DoubleCellValue((e.data['saving'] as int)/100),TextCellValue(e.data['note'])]);
     }
     final overview=excel['年度汇总'];
     for(final row in <List<CellValue>>[
       [TextCellValue('$year 年家庭收入与储蓄报告')],
-      [const TextCellValue('收入（元）'),DoubleCellValue(income/100)],
-      [const TextCellValue('净存入（元）'),DoubleCellValue(saving/100)],
+      [TextCellValue('收入（元）'),DoubleCellValue(income/100)],
+      [TextCellValue('净存入（元）'),DoubleCellValue(saving/100)],
       [TextCellValue(completeness)],[TextCellValue(generated)],
     ]) {overview.appendRow(row);}
     final accounts=excel['资产核对历史'];
