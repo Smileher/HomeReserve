@@ -49,7 +49,6 @@ class AppButton extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final foreground = primary ? colors.onPrimary : colors.onSurface;
     return glass.GlassButton.custom(
-      surfaceStyle: glass.GlassSurfaceStyle.glass,
       onTap: onPressed ?? () {},
       enabled: onPressed != null,
       height: 44,
@@ -99,7 +98,6 @@ class AppIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final button = glass.GlassIconButton(
-      surfaceStyle: glass.GlassSurfaceStyle.glass,
       icon: icon,
       onPressed: onPressed,
       semanticLabel: tooltip,

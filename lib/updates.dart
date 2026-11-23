@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-const appVersion = '1.3.0';
+const appVersion = '1.3.1';
 const releasesUrl = 'https://github.com/Smileher/HomeReserve/releases/latest';
 
 class AppRelease {
