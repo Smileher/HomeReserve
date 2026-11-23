@@ -326,6 +326,8 @@ class BookPage extends ConsumerStatefulWidget {
 
 class _BookPageState extends ConsumerState<BookPage> {
   DateTime selected = DateTime(DateTime.now().year, DateTime.now().month);
+  String? _requestedTheme;
+  bool _savingTheme = false;
   AppStore get store => ref.read(storeProvider);
   Book get book => store.book;
   String get month => monthKey(selected);
@@ -1312,35 +1314,66 @@ class _BookPageState extends ConsumerState<BookPage> {
     );
   }
 
+  Future<void> selectTheme(String theme) async {
+    if (!mounted) return;
+    final appStore = store;
+    if (appStore.busy && !_savingTheme) return;
+    if ((_requestedTheme ?? appStore.book.settings['theme']) == theme) return;
+    setState(() => _requestedTheme = theme);
+    if (_savingTheme) return;
+    _savingTheme = true;
+    try {
+      // Glass may repeat a selection while persistence is pending. Coalesce
+      // rapid changes locally and keep the store's concurrent-write guard.
+      while (_requestedTheme != appStore.book.settings['theme']) {
+        final target = _requestedTheme!;
+        await appStore.settings({'theme': target});
+      }
+    } finally {
+      _requestedTheme = null;
+      _savingTheme = false;
+      if (mounted) setState(() {});
+    }
+  }
+
   Widget themeChoices() {
     const choices = [
       ('system', Icons.brightness_auto_outlined, '跟随系统'),
       ('light', Icons.light_mode_outlined, '浅色'),
       ('dark', Icons.dark_mode_outlined, '深色'),
     ];
-    final selectedTheme = math.max(
-      0,
-      choices.indexWhere((choice) => choice.$1 == book.settings['theme']),
-    );
-    return glass.GlassSegmentedControl(
-      selectedTextStyle: Theme.of(context).textTheme.labelMedium,
-      unselectedTextStyle: Theme.of(context).textTheme.labelMedium,
-      height: 64,
-      borderRadius: 18,
-      selectedIndex: selectedTheme,
-      activeSelectedColor: Theme.of(context).colorScheme.primary,
-      segments: [
-        for (final choice in choices)
-          glass.GlassSegment(
-            icon: Icon(choice.$2, size: 20),
-            label: choice.$3,
-            semanticLabel: '主题：${choice.$3}',
+    return AnimatedBuilder(
+      animation: store,
+      builder: (context, _) {
+        final selectedTheme = math.max(
+          0,
+          choices.indexWhere(
+            (choice) =>
+                choice.$1 == (_requestedTheme ?? book.settings['theme']),
           ),
-      ],
-      onSegmentSelected: (index) => guard(() async {
-        await store.settings({'theme': choices[index].$1});
-        if (mounted) setState(() {});
-      }),
+        );
+        return IgnorePointer(
+          ignoring: store.busy && !_savingTheme,
+          child: glass.GlassSegmentedControl(
+            selectedTextStyle: Theme.of(context).textTheme.labelMedium,
+            unselectedTextStyle: Theme.of(context).textTheme.labelMedium,
+            height: 64,
+            borderRadius: 18,
+            selectedIndex: selectedTheme,
+            activeSelectedColor: Theme.of(context).colorScheme.primary,
+            segments: [
+              for (final choice in choices)
+                glass.GlassSegment(
+                  icon: Icon(choice.$2, size: 20),
+                  label: choice.$3,
+                  semanticLabel: '主题：${choice.$3}',
+                ),
+            ],
+            onSegmentSelected: (index) =>
+                guard(() => selectTheme(choices[index].$1)),
+          ),
+        );
+      },
     );
   }
 
@@ -1451,7 +1484,7 @@ class _BookPageState extends ConsumerState<BookPage> {
             style: const TextStyle(height: 1.8),
           ),
           const SizedBox(height: 14),
-          muted('版本 1.2.0 · 本地离线 · 人民币\n数据保存在本机，不会上传财务数据。请定期导出备份。'),
+          muted('版本 1.2.1 · 本地离线 · 人民币\n数据保存在本机，不会上传财务数据。请定期导出备份。'),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,

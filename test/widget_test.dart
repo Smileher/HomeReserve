@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:drift/native.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +13,25 @@ import 'package:home_reserve/transfer.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart' as glass;
 
 import 'domain_test.dart' as fixture;
+
+class DelayedSettingsDatabase extends LocalDatabase {
+  DelayedSettingsDatabase() : super(NativeDatabase.memory());
+  final gate = Completer<void>();
+  Book? saved;
+  int saves = 0;
+  bool failNext = false;
+
+  @override
+  Future<void> save(Book before, Book after) async {
+    saves++;
+    await gate.future;
+    if (failNext) {
+      failNext = false;
+      throw StateError('测试写入失败');
+    }
+    saved = after.copy();
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -206,6 +228,53 @@ void main() {
     store.dispose();
     router.go('/');
   });
+  testWidgets('主题保存期间重复和快速切换只保存最后选择', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final store = AppStore(memoryOnly: true);
+    await store.initialize();
+    final db = DelayedSettingsDatabase();
+    store.db = db;
+    router.go('/settings');
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storeProvider.overrideWithValue(store)],
+        child: const HomeReserveApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final chooser = tester.widget<glass.GlassSegmentedControl>(
+      find.byType(glass.GlassSegmentedControl).last,
+    );
+    for (final index in [1, 1, 2, 0, 2]) {
+      chooser.onSegmentSelected(index);
+    }
+    await tester.pump();
+    expect(store.busy, isTrue);
+    db.gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('正在保存'), findsNothing);
+    expect(store.book.settings['theme'], 'dark');
+    expect(db.saved?.settings['theme'], 'dark');
+    expect(db.saves, 2);
+    expect(store.busy, isFalse);
+    db.failNext = true;
+    chooser.onSegmentSelected(1);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('测试写入失败'), findsOneWidget);
+    expect(store.book.settings['theme'], 'dark');
+    expect(store.busy, isFalse);
+    chooser.onSegmentSelected(1);
+    await tester.pumpAndSettle();
+    expect(store.book.settings['theme'], 'light');
+    expect(db.saved?.settings['theme'], 'light');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    store.db = null;
+    await db.close();
+    store.dispose();
+    router.go('/');
+  });
   testWidgets('玻璃账户选择与余额核对保持金额和归档校验', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -386,57 +455,63 @@ void main() {
     store.dispose();
     router.go('/');
   });
-  testWidgets('桌面最小内容尺寸下各页面与月度表单可用', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    tester.view.physicalSize = const Size(960, 640);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final store = AppStore(memoryOnly: true);
-    await store.initialize();
-    await store.put(
-      Entry(
-        id: 'member-a',
-        kind: 'member',
-        data: {'name': '成员甲', 'active': true, 'order': 0},
-      ),
-    );
-    router.go('/');
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [storeProvider.overrideWithValue(store)],
-        child: const HomeReserveApp(),
-      ),
-    );
-    for (final theme in ['light', 'dark']) {
-      await store.settings({'theme': theme});
-      await tester.pumpAndSettle();
-      for (final destination in destinations) {
-        await tester.tap(find.text(destination.$1).hitTestable().first);
-        await tester.pumpAndSettle();
-        final scroll = find.byType(SingleChildScrollView).first;
-        await tester.drag(scroll, const Offset(0, -2000));
+  for (final width in [360.0, 849.0, 850.0, 960.0]) {
+    testWidgets('Windows 内容宽度 $width 下导航、各页面与月度表单可用', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      tester.view.physicalSize = Size(width, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final store = AppStore(memoryOnly: true);
+      await store.initialize();
+      await store.put(
+        Entry(
+          id: 'member-a',
+          kind: 'member',
+          data: {'name': '成员甲', 'active': true, 'order': 0},
+        ),
+      );
+      router.go('/');
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [storeProvider.overrideWithValue(store)],
+          child: const HomeReserveApp(),
+        ),
+      );
+      for (final theme in ['light', 'dark']) {
+        await store.settings({'theme': theme});
         await tester.pumpAndSettle();
         expect(
-          tester.takeException(),
-          isNull,
-          reason: '$theme ${destination.$3}',
+          find.byType(glass.GlassTabBar),
+          width < 850 ? findsOneWidget : findsNothing,
         );
+        for (final destination in destinations) {
+          await tester.tap(find.text(destination.$1).hitTestable().first);
+          await tester.pumpAndSettle();
+          final scroll = find.byType(SingleChildScrollView).first;
+          await tester.drag(scroll, const Offset(0, -2000));
+          await tester.pumpAndSettle();
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: '$theme ${destination.$3}',
+          );
+        }
+        await tester.tap(find.text('月度').hitTestable().first);
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byTooltip('编辑月度记录').last);
+        await tester.tap(find.byTooltip('编辑月度记录').last);
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('保存'));
+        expect(find.text('保存').hitTestable(), findsOneWidget);
+        expect(tester.takeException(), isNull, reason: '$theme 月度表单');
+        await tester.tap(find.text('取消'));
+        await tester.pumpAndSettle();
       }
-      await tester.tap(find.text('月度').hitTestable().first);
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byTooltip('编辑月度记录').last);
-      await tester.tap(find.byTooltip('编辑月度记录').last);
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('保存'));
-      expect(find.text('保存').hitTestable(), findsOneWidget);
-      expect(tester.takeException(), isNull, reason: '$theme 月度表单');
-      await tester.tap(find.text('取消'));
-      await tester.pumpAndSettle();
-    }
-    await tester.pumpWidget(const SizedBox());
-    store.dispose();
-    router.go('/');
-  });
+      await tester.pumpWidget(const SizedBox());
+      store.dispose();
+      router.go('/');
+    });
+  }
 }

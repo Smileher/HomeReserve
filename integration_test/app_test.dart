@@ -51,9 +51,15 @@ void main() {
     expect(record.data['saving'], 50000);
     await tester.tap(find.text('设置').hitTestable().first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('深色').hitTestable().first);
+    final chooser = tester.widget<glass.GlassSegmentedControl>(
+      find.byType(glass.GlassSegmentedControl).last,
+    );
+    for (final index in [1, 1, 2, 0, 2]) {
+      chooser.onSegmentSelected(index);
+    }
     await tester.pumpAndSettle();
     expect(store.book.settings['theme'], 'dark');
+    expect(find.textContaining('正在保存'), findsNothing);
     await tester.tap(find.text('资产').hitTestable().first);
     await tester.pumpAndSettle();
     expect(find.text('存款与理财'), findsOneWidget);
