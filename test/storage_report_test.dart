@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +29,68 @@ void main() {
     final restored = await db.readBook();
     expect(canonical(restored.toJson()), canonical(book.toJson()));
     await db.close();
+  });
+  test('重置清空持久化账本、设置和自动备份，保留外部导出文件', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'home-reserve-reset-',
+    );
+    final db = LocalDatabase(
+      NativeDatabase(File('${directory.path}/test.sqlite')),
+    );
+    final store = AppStore(memoryOnly: true);
+    await store.initialize();
+    store.db = db;
+    store.directory = directory;
+    await store.commit(fixture.sample());
+    final oldDeviceId = store.book.settings['deviceId'];
+    await store.createBackup();
+    final exported = File('${directory.path}/exported.json');
+    await exported.writeAsString('exported data', encoding: utf8);
+    await store.resetData();
+    expect(store.book.entries, isEmpty);
+    expect(store.book.settings['theme'], 'system');
+    expect(store.book.settings['device'], '本机设备');
+    expect(store.book.settings['deviceId'], isNot(oldDeviceId));
+    expect(store.book.settings['initialized'], isTrue);
+    expect(await store.backups(), isEmpty);
+    expect(await exported.exists(), isTrue);
+    expect(
+      canonical((await db.readBook()).toJson()),
+      canonical(store.book.toJson()),
+    );
+    expect(store.busy, isFalse);
+    store.db = null;
+    store.dispose();
+    await db.close();
+    await directory.delete(recursive: true);
+  });
+  test('重置保留写入锁，事务失败后不清空账本和备份', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'home-reserve-reset-fail-',
+    );
+    final db = LocalDatabase(NativeDatabase.memory());
+    final store = AppStore(memoryOnly: true);
+    await store.initialize();
+    store.db = db;
+    store.directory = directory;
+    await store.commit(fixture.sample());
+    await store.createBackup();
+    final original = canonical(store.book.toJson());
+    store.busy = true;
+    await expectLater(store.resetData(), throwsStateError);
+    store.busy = false;
+    await db.customStatement(
+      "CREATE TRIGGER fail_reset BEFORE DELETE ON entities BEGIN SELECT RAISE(ABORT, 'test reset failure'); END",
+    );
+    await expectLater(store.resetData(), throwsA(isA<Exception>()));
+    expect(canonical(store.book.toJson()), original);
+    expect(canonical((await db.readBook()).toJson()), original);
+    expect(await store.backups(), hasLength(1));
+    expect(store.busy, isFalse);
+    store.db = null;
+    store.dispose();
+    await db.close();
+    await directory.delete(recursive: true);
   });
   test('Excel 金额为数值，CSV 往返保留中文备注，Word 为有效 OOXML', () {
     final book = fixture.sample();

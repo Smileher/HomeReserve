@@ -19,6 +19,7 @@ import 'domain.dart';
 import 'reports.dart';
 import 'store.dart';
 import 'transfer.dart';
+import 'updates.dart';
 
 final storeProvider = Provider<AppStore>((ref) => throw UnimplementedError());
 final router = GoRouter(
@@ -328,6 +329,7 @@ class _BookPageState extends ConsumerState<BookPage> {
   DateTime selected = DateTime(DateTime.now().year, DateTime.now().month);
   String? _requestedTheme;
   bool _savingTheme = false;
+  bool _checkingUpdate = false;
   AppStore get store => ref.read(storeProvider);
   Book get book => store.book;
   String get month => monthKey(selected);
@@ -1456,6 +1458,16 @@ class _BookPageState extends ConsumerState<BookPage> {
             subtitle: const Text('导入和删除前自动保存，最近 10 份'),
             onTap: restoreBackup,
           ),
+          const Divider(),
+          AppListTile(
+            leading: Icon(
+              Icons.delete_sweep_outlined,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            title: const Text('重置所有本机数据'),
+            subtitle: const Text('清空账本、设置和自动备份，需再次确认'),
+            onTap: () => guard(resetData),
+          ),
         ],
       ),
     ),
@@ -1484,18 +1496,22 @@ class _BookPageState extends ConsumerState<BookPage> {
             style: const TextStyle(height: 1.8),
           ),
           const SizedBox(height: 14),
-          muted('版本 1.2.1 · 本地离线 · 人民币\n数据保存在本机，不会上传财务数据。请定期导出备份。'),
+          muted('版本 $appVersion · 本地离线 · 人民币\n数据保存在本机，不会上传财务数据。请定期导出备份。'),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             children: [
               AppButton.icon(
                 plain: true,
-                onPressed: () => openUrl(
-                  'https://github.com/Smileher/HomeReserve/releases/latest',
-                ),
+                onPressed: _checkingUpdate ? null : () => guard(checkUpdate),
                 icon: const Icon(Icons.system_update_outlined),
-                label: const Text('查看最新版本'),
+                label: Text(_checkingUpdate ? '正在检查…' : '检查更新'),
+              ),
+              AppButton.icon(
+                plain: true,
+                onPressed: () => openUrl(releasesUrl),
+                icon: const Icon(Icons.download_outlined),
+                label: const Text('前往下载'),
               ),
               AppButton.icon(
                 plain: true,
@@ -1510,6 +1526,83 @@ class _BookPageState extends ConsumerState<BookPage> {
       ),
     ),
   ];
+
+  Future<void> resetData() async {
+    if (store.busy) {
+      message('正在保存，请稍后重试');
+      return;
+    }
+    if (!await confirm(
+      '重置所有本机数据？',
+      '将清空所有成员、月度记录、账户、余额历史、导入历史、本机设置及自动备份。\n\n'
+          '此操作不可撤销，建议先导出完整数据包。已导出到其他位置的文件不会删除。',
+      button: '继续',
+    )) {
+      return;
+    }
+    if (!mounted) return;
+    final confirmation = TextEditingController();
+    var reset = false;
+    await form(
+      '最后确认重置',
+      (_) => [
+        const Text('确认清空后将恢复为空账本，设备名称和主题也会恢复默认。'),
+        const SizedBox(height: 16),
+        field(confirmation, '输入“清空”以继续'),
+      ],
+      () async {
+        if (confirmation.text.trim() != '清空') {
+          throw const FormatException('请输入“清空”后再确认');
+        }
+        await store.resetData();
+        reset = true;
+      },
+      saveLabel: '清空所有数据',
+    );
+    confirmation.dispose();
+    if (reset) message('已重置所有本机数据');
+  }
+
+  Future<void> checkUpdate() async {
+    if (_checkingUpdate) return;
+    setState(() => _checkingUpdate = true);
+    try {
+      final release = await checkLatestRelease();
+      if (!mounted) return;
+      if (!release.isNewerThan(appVersion)) {
+        message('当前已是最新版本（$appVersion）');
+        return;
+      }
+      final download = release.downloads[Platform.operatingSystem];
+      await showDialog<void>(
+        context: context,
+        builder: (c) => AppDialog(
+          title: Text('发现新版本 ${release.version}'),
+          content: Text(
+            '当前版本 $appVersion\n最新版本 ${release.version}\n\n'
+            '将在浏览器中打开 GitHub 下载。升级前建议导出数据备份。',
+          ),
+          actions: [
+            AppButton.plain(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('稍后'),
+            ),
+            AppButton.plain(
+              onPressed: () => openUrl(release.page.toString()),
+              child: const Text('发布说明'),
+            ),
+            AppButton.primary(
+              onPressed: () => openUrl((download ?? release.page).toString()),
+              child: const Text('前往下载'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      _checkingUpdate = false;
+      if (mounted) setState(() {});
+    }
+  }
 
   Future<void> openUrl(String url) => guard(() async {
     if (!await launchUrl(
@@ -1584,6 +1677,7 @@ class _BookPageState extends ConsumerState<BookPage> {
     List<Widget> Function(StateSetter update) fields,
     Future<void> Function() save, {
     Widget? extra,
+    String saveLabel = '保存',
   }) async {
     String? error;
     bool saving = false;
@@ -1636,7 +1730,9 @@ class _BookPageState extends ConsumerState<BookPage> {
                         }
                       }
                     },
-              child: Text(saving ? '保存中…' : '保存'),
+              child: Text(
+                saving ? (saveLabel == '保存' ? '保存中…' : '处理中…') : saveLabel,
+              ),
             ),
           ],
         ),

@@ -128,6 +128,38 @@ class AppStore extends ChangeNotifier {
     await commit(next);
   }
 
+  Future<void> resetData() async {
+    if (busy) throw StateError('正在保存，请稍后重试');
+    final next = Book(
+      settings: {
+        'initialized': true,
+        'theme': 'system',
+        'device': '本机设备',
+        'deviceId': newId(),
+      },
+    );
+    next.validate();
+    busy = true;
+    notifyListeners();
+    try {
+      // Reset is an explicit erase: do not create another recovery backup.
+      // Persist first so a failed transaction preserves the book and backups.
+      await db?.save(book, next);
+      book = next;
+      if (directory != null) {
+        try {
+          final folder = Directory(p.join(directory!.path, 'backups'));
+          if (await folder.exists()) await folder.delete(recursive: true);
+        } on FileSystemException {
+          throw const FormatException('账本已重置，但自动备份清理失败。请关闭其他占用文件的程序后重试重置。');
+        }
+      }
+    } finally {
+      busy = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> deleteMonth(Entry e) async {
     final next = book.copy();
     final children = next.allocations

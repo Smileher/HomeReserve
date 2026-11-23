@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:material_ui/material_ui.dart';
@@ -10,9 +11,11 @@ import 'package:home_reserve/store.dart';
 import 'package:home_reserve/domain.dart';
 import 'package:home_reserve/app_widgets.dart';
 import 'package:home_reserve/transfer.dart';
+import 'package:home_reserve/updates.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart' as glass;
 
 import 'domain_test.dart' as fixture;
+import 'updates_test.dart' as update_fixture;
 
 class DelayedSettingsDatabase extends LocalDatabase {
   DelayedSettingsDatabase() : super(NativeDatabase.memory());
@@ -274,6 +277,96 @@ void main() {
     await db.close();
     store.dispose();
     router.go('/');
+  });
+  testWidgets('重置必须二次确认并输入清空，取消和输入错误保留账本', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final store = AppStore(memoryOnly: true);
+    await store.initialize();
+    await store.commit(fixture.sample());
+    router.go('/settings');
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storeProvider.overrideWithValue(store)],
+        child: const HomeReserveApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('重置所有本机数据'));
+    await tester.tap(find.text('重置所有本机数据'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+    expect(store.book.members, isNotEmpty);
+    await tester.tap(find.text('重置所有本机数据'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('继续'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('清空所有数据'));
+    await tester.pumpAndSettle();
+    expect(find.text('请输入“清空”后再确认'), findsOneWidget);
+    expect(store.book.members, isNotEmpty);
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+    expect(store.book.members, isNotEmpty);
+    await tester.tap(find.text('重置所有本机数据'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('继续'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(EditableText).first, '清空');
+    await tester.tap(find.text('清空所有数据'));
+    await tester.pumpAndSettle();
+    expect(store.book.entries, isEmpty);
+    expect(store.book.settings['device'], '本机设备');
+    expect(find.text('已重置所有本机数据'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    store.dispose();
+    router.go('/');
+  });
+  testWidgets('检查更新显示新版本、最新版和离线提示，完成后允许重试', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    for (final scenario in ['new', 'current', 'offline']) {
+      final client = update_fixture.UpdateTestClient(
+        update_fixture.release(scenario == 'new' ? 'v1.4.0' : 'v$appVersion'),
+        error: scenario == 'offline' ? const SocketException('offline') : null,
+      );
+      await HttpOverrides.runZoned(() async {
+        final store = AppStore(memoryOnly: true);
+        await store.initialize();
+        router.go('/settings');
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [storeProvider.overrideWithValue(store)],
+            child: const HomeReserveApp(),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('检查更新').first);
+        await tester.tap(find.text('检查更新').hitTestable().first);
+        await tester.pumpAndSettle();
+        if (scenario == 'new') {
+          expect(find.text('发现新版本 1.4.0'), findsOneWidget);
+          expect(find.text('发布说明'), findsOneWidget);
+          await tester.tap(find.text('稍后'));
+          await tester.pumpAndSettle();
+        } else {
+          expect(
+            find.textContaining(
+              scenario == 'current' ? '当前已是最新版本' : '无法连接 GitHub',
+            ),
+            findsOneWidget,
+          );
+        }
+        expect(find.text('正在检查…'), findsNothing);
+        expect(client.closed, isTrue);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        store.dispose();
+        router.go('/');
+      }, createHttpClient: (_) => client);
+    }
   });
   testWidgets('玻璃账户选择与余额核对保持金额和归档校验', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
